@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { TestEmailButton } from "@/components/admin/test-email-button";
 import { getPayments } from "@/lib/supabase/payments";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { getAllRegistrations } from "@/lib/supabase/registrations";
@@ -131,6 +132,8 @@ export default async function AdminDashboardPage() {
           hint="for reach-outs"
         />
       </div>
+
+      <TestEmailButton />
 
       <div className="flex flex-col gap-3">
         <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">

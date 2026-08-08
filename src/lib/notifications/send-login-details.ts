@@ -1,3 +1,5 @@
+import { Resend } from "resend";
+
 export interface LoginDetailsPayload {
   displayName: string;
   email: string;
@@ -19,7 +21,7 @@ function siteUrl() {
   );
 }
 
-function credentialsMessage({
+function credentialsText({
   displayName,
   email,
   password,
@@ -38,6 +40,37 @@ function credentialsMessage({
   ].join("\n");
 }
 
+function credentialsHtml({
+  displayName,
+  email,
+  password,
+}: LoginDetailsPayload) {
+  const loginUrl = `${siteUrl()}/login`;
+  return `
+    <div style="font-family: Georgia, serif; color: #1a1a1a; line-height: 1.5; max-width: 480px;">
+      <h1 style="font-weight: 400; font-size: 22px; margin: 0 0 12px;">Winter Reunion 2027</h1>
+      <p style="margin: 0 0 16px;">Save this email — it's your login.</p>
+      <p style="margin: 0 0 8px;"><strong>Name:</strong> ${escapeHtml(displayName)}</p>
+      <p style="margin: 0 0 8px;"><strong>Email (sign-in):</strong> ${escapeHtml(email)}</p>
+      <p style="margin: 0 0 16px;"><strong>Password:</strong> ${escapeHtml(password)}</p>
+      <p style="margin: 0 0 16px;">
+        <a href="${loginUrl}" style="color: #1a1a1a;">Sign in here</a>
+      </p>
+      <p style="margin: 0; color: #666; font-size: 14px;">
+        If you forget it later, ask Key to reset your password.
+      </p>
+    </div>
+  `;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 /** Normalize common US numbers to E.164 for Twilio. */
 export function toE164Phone(phone: string): string | null {
   const digits = phone.replace(/\D/g, "");
@@ -51,41 +84,34 @@ async function sendEmail(
   payload: LoginDetailsPayload
 ): Promise<{ ok: boolean; reason?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM_EMAIL;
+  const from =
+    process.env.RESEND_FROM_EMAIL || "Winter Reunion <onboarding@resend.dev>";
 
-  if (!apiKey || !from) {
+  if (!apiKey) {
     return {
       ok: false,
-      reason: "Email not configured yet (RESEND_API_KEY / RESEND_FROM_EMAIL).",
+      reason: "Email not configured yet (RESEND_API_KEY).",
     };
   }
 
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [payload.email],
-        subject: "Your Winter Reunion 2027 login",
-        text: credentialsMessage(payload),
-      }),
-    });
+  const resend = new Resend(apiKey);
+  const { error } = await resend.emails.send({
+    from,
+    to: [payload.email],
+    subject: "Your Winter Reunion 2027 login",
+    text: credentialsText(payload),
+    html: credentialsHtml(payload),
+  });
 
-    if (!response.ok) {
-      const body = await response.text();
-      console.error("sendEmail (Resend) failed", response.status, body);
-      return { ok: false, reason: "Email provider rejected the send." };
-    }
-
-    return { ok: true };
-  } catch (error) {
-    console.error("sendEmail failed", error);
-    return { ok: false, reason: "Could not reach the email provider." };
+  if (error) {
+    console.error("sendEmail (Resend) failed", error);
+    return {
+      ok: false,
+      reason: error.message || "Email provider rejected the send.",
+    };
   }
+
+  return { ok: true };
 }
 
 async function sendSms(
@@ -108,7 +134,6 @@ async function sendSms(
     return { ok: false, reason: "Phone number could not be formatted for SMS." };
   }
 
-  // Keep SMS short — carriers truncate long bodies.
   const body = [
     `Winter Reunion login`,
     `Name: ${payload.displayName}`,
@@ -148,7 +173,6 @@ async function sendSms(
 /**
  * Sends the brand-new login once at join time (password is never stored
  * afterward). Email via Resend; SMS via Twilio when those env vars exist.
- * Missing providers are skipped so join still succeeds during setup.
  */
 export async function sendLoginDetails(
   payload: LoginDetailsPayload
