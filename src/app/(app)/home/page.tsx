@@ -9,7 +9,6 @@ import { HomeUpdates } from "@/components/updates/home-updates";
 import { getActivities } from "@/lib/supabase/activities";
 import { getAnnouncements } from "@/lib/supabase/announcements";
 import { getCabins } from "@/lib/supabase/cabins";
-import { getPayments } from "@/lib/supabase/payments";
 import { getPolls } from "@/lib/supabase/polls";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { getRegistration } from "@/lib/supabase/registrations";
@@ -29,7 +28,6 @@ export default async function HomePage() {
     trip,
     registration,
     announcements,
-    payments,
     polls,
     cabins,
     activities,
@@ -40,7 +38,6 @@ export default async function HomePage() {
     getTripSettings(supabase),
     user ? getRegistration(supabase, user.id) : Promise.resolve(null),
     getAnnouncements(supabase, 5),
-    user ? getPayments(supabase) : Promise.resolve([]),
     getPolls(supabase),
     getCabins(supabase),
     getActivities(supabase),
@@ -52,13 +49,9 @@ export default async function HomePage() {
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
   const needsPhone = Boolean(user && profile && !profile.phone);
-  const outstanding = payments.filter(
-    (payment) => payment.status === "unpaid" || payment.status === "pending"
-  );
 
   const { personal, group } = buildHomeUpdates({
     registration,
-    payments,
     announcements,
     polls,
     cabins,
@@ -85,33 +78,19 @@ export default async function HomePage() {
       label: profile?.phone
         ? "Number on file"
         : "Add your number for urgent texts",
-      detail: "So Key can reach you when a cabin or payment drops.",
+      detail: "So Key can reach you when a cabin or plan changes.",
       href: "/home#phone",
       cta: "Add number",
       done: Boolean(profile?.phone),
     },
-    {
-      id: "pay",
-      label:
-        outstanding.length === 0
-          ? "Payments clear"
-          : `Settle ${outstanding.length} open charge${outstanding.length === 1 ? "" : "s"}`,
-      detail:
-        outstanding.length === 0
-          ? "You're good on money for now."
-          : "Don't leave the group waiting — check what you owe.",
-      href: "/payments",
-      cta: "Open payments",
-      done: outstanding.length === 0,
-    },
   ];
 
   const exploreLinks = [
+    { href: "/talk", label: "Talk" },
     { href: "/cabins", label: "Cabins" },
     { href: "/activities", label: "Activities" },
     { href: "/polls", label: "Polls" },
     { href: "/suggestions", label: "Ideas" },
-    { href: "/payments", label: "Payments" },
   ];
 
   return (
@@ -145,7 +124,7 @@ export default async function HomePage() {
         <div className="wr-panel wr-fade-up-delay-1 flex flex-col gap-3">
           <span className="wr-section-label">Admin lane</span>
           <p className="text-sm text-off-white/70">
-            Run payments, posts, and trip setup from one spot.
+            Run posts, members, and trip setup from one spot.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/admin" className="wr-btn-primary">

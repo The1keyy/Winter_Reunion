@@ -54,11 +54,10 @@ export default async function AdminDashboardPage() {
     },
     {
       href: "/payments",
-      title: "Payments",
+      title: "Payment ledger",
       detail: unpaid.length
-        ? `${unpaid.length} open charges · $${unpaidTotal.toLocaleString()} outstanding`
-        : "Assign charges and mark people paid.",
-      primary: true,
+        ? `${unpaid.length} open · $${unpaidTotal.toLocaleString()} — track only, no in-app pay`
+        : "Optional: track who paid you outside the app.",
     },
     {
       href: "/admin/trip-settings",

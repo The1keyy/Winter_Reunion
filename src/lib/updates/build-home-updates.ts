@@ -2,7 +2,6 @@ import type {
   Activity,
   Announcement,
   Cabin,
-  Payment,
   Poll,
   Registration,
   TalkPost,
@@ -20,7 +19,6 @@ export interface HomeUpdateItem {
 
 interface BuildHomeUpdatesInput {
   registration: Registration | null;
-  payments: Payment[];
   announcements: Announcement[];
   polls: Poll[];
   cabins: Cabin[];
@@ -30,10 +28,10 @@ interface BuildHomeUpdatesInput {
 
 /**
  * Builds compact notification chips: personal (this member only) vs group.
+ * Money stays off the member feed — Key handles that outside the app.
  */
 export function buildHomeUpdates({
   registration,
-  payments,
   announcements,
   polls,
   cabins,
@@ -54,31 +52,6 @@ export function buildHomeUpdates({
       detail: "Takes under a minute.",
       href: "/rsvp",
       cta: "Go",
-    });
-  }
-
-  const outstanding = payments.filter(
-    (payment) => payment.status === "unpaid" || payment.status === "pending"
-  );
-  const outstandingTotal = outstanding.reduce(
-    (sum, payment) => sum + payment.amount,
-    0
-  );
-
-  if (outstanding.length > 0) {
-    personal.push({
-      id: "payments-outstanding",
-      scope: "personal",
-      headline:
-        outstanding.length === 1
-          ? `You owe $${outstandingTotal.toLocaleString()}`
-          : `${outstanding.length} charges · $${outstandingTotal.toLocaleString()}`,
-      detail:
-        outstanding.length === 1
-          ? outstanding[0].description
-          : "Only you see your balance.",
-      href: "/payments",
-      cta: "Pay",
     });
   }
 

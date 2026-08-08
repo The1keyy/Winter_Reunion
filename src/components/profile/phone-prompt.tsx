@@ -47,7 +47,7 @@ export function PhonePrompt() {
           Drop your number
         </h2>
         <p className="text-sm text-off-white/70">
-          Cabin picks, payment dues, last-minute changes — Key texts you. Private
+          Cabin picks, plan changes, last-minute stuff — Key texts you. Private
           to trip admins.
         </p>
       </div>

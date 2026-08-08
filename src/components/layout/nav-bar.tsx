@@ -14,7 +14,6 @@ const desktopLinks = [
   { href: "/cabins", label: "Cabins" },
   { href: "/activities", label: "Activities" },
   { href: "/polls", label: "Polls" },
-  { href: "/payments", label: "Pay" },
   { href: "/suggestions", label: "Ideas" },
 ] as const;
 

@@ -35,16 +35,17 @@ export default async function PaymentsPage() {
   const profile = await getProfile(supabase, user.id);
   const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
 
+  // Money stays out of the member app — Key collects outside (Venmo, etc.).
+  if (!isAdmin) {
+    redirect("/home");
+  }
+
   const [payments, profiles] = await Promise.all([
     getPayments(supabase),
-    isAdmin ? getAllProfiles(supabase) : Promise.resolve([]),
+    getAllProfiles(supabase),
   ]);
 
   const profileNameById = new Map(profiles.map((p) => [p.id, p.name]));
-
-  const totalOwed = payments
-    .filter((p) => p.status === "unpaid" || p.status === "pending")
-    .reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <div className="flex w-full max-w-3xl flex-col gap-8">
@@ -53,31 +54,17 @@ export default async function PaymentsPage() {
           Payments
         </h1>
         <p className="text-sm font-normal text-off-white/70">
-          {isAdmin
-            ? "Track charges for every member and confirm payment."
-            : "Here's what you owe for the trip."}
+          Admin ledger only — track who&apos;s paid. Members never see this or
+          pay in the app.
         </p>
       </div>
 
-      {!isAdmin ? (
-        <div className="border border-warm-gray/20 p-4">
-          <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-            Outstanding
-          </span>
-          <p className="mt-1 text-2xl font-light text-off-white">
-            ${totalOwed.toLocaleString()}
-          </p>
-        </div>
-      ) : null}
-
-      {isAdmin ? (
-        <div className="flex flex-col gap-4 border-b border-warm-gray/20 pb-8">
-          <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-            Add a charge
-          </span>
-          <PaymentForm profiles={profiles} />
-        </div>
-      ) : null}
+      <div className="flex flex-col gap-4 border-b border-warm-gray/20 pb-8">
+        <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
+          Add a charge
+        </span>
+        <PaymentForm profiles={profiles} />
+      </div>
 
       <div className="flex flex-col gap-4">
         {payments.length === 0 ? (
@@ -119,10 +106,7 @@ export default async function PaymentsPage() {
                       </span>
                     </div>
                     <p className="text-sm font-normal text-off-white/60">
-                      {[
-                        isAdmin ? memberName : null,
-                        dueLabel ? `Due ${dueLabel}` : null,
-                      ]
+                      {[memberName, dueLabel ? `Due ${dueLabel}` : null]
                         .filter(Boolean)
                         .join(" \u00b7 ")}
                     </p>
@@ -137,37 +121,31 @@ export default async function PaymentsPage() {
                   </span>
                 </div>
 
-                {isAdmin ? (
-                  <div className="flex flex-wrap items-center gap-4 border-t border-warm-gray/20 pt-3">
-                    {STATUS_OPTIONS.filter(
-                      (status) => status !== payment.status
-                    ).map((status) => (
-                      <form
-                        key={status}
-                        action={setPaymentStatus.bind(
-                          null,
-                          payment.id,
-                          status
-                        )}
-                      >
-                        <button
-                          type="submit"
-                          className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-                        >
-                          Mark {status}
-                        </button>
-                      </form>
-                    ))}
-                    <form action={deletePayment.bind(null, payment.id)}>
+                <div className="flex flex-wrap items-center gap-4 border-t border-warm-gray/20 pt-3">
+                  {STATUS_OPTIONS.filter(
+                    (status) => status !== payment.status
+                  ).map((status) => (
+                    <form
+                      key={status}
+                      action={setPaymentStatus.bind(null, payment.id, status)}
+                    >
                       <button
                         type="submit"
-                        className="text-sm font-normal text-off-white/50 hover:text-off-white"
+                        className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
                       >
-                        Delete
+                        Mark {status}
                       </button>
                     </form>
-                  </div>
-                ) : null}
+                  ))}
+                  <form action={deletePayment.bind(null, payment.id)}>
+                    <button
+                      type="submit"
+                      className="text-sm font-normal text-off-white/50 hover:text-off-white"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </div>
             );
           })

@@ -48,8 +48,8 @@ export default async function TalkPage() {
           Talk
         </h1>
         <p className="text-sm text-off-white/70">
-          Post it, like it, reply to it. Anything that doesn&apos;t fit RSVP,
-          payments, or announcements lives here.
+          Post it, like it, reply to it. Anything that doesn&apos;t fit RSVP or
+          announcements lives here.
         </p>
       </header>
 
