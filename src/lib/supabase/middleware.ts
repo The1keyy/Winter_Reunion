@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import type { Database } from "@/types/database";
 
-const PUBLIC_PATHS = ["/login"];
+const PUBLIC_PATHS = ["/login", "/join"];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some(
@@ -13,7 +13,7 @@ function isPublicPath(pathname: string) {
 
 /**
  * Refreshes the Supabase session cookie on every request and enforces the
- * "signed in except on /login" rule. Called from src/proxy.ts.
+ * "signed in except on /login or /join" rule. Called from src/proxy.ts.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
