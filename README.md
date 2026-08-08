@@ -31,7 +31,13 @@ https://winter-reunion.vercel.app/join
 At join they enter first name + last initial, email, mobile, and a password they choose. The app tries to email and text those login details once (password is never stored in readable form afterward):
 
 - **Email:** set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (and `NEXT_PUBLIC_SITE_URL`)
-- **SMS:** set `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_FROM_NUMBER`
+- **SMS (Twilio):**
+  1. Sign up at https://www.twilio.com/try-twilio
+  2. Console → copy **Account SID** + **Auth Token**
+  3. Get a phone number (Messaging capable) → copy it as `+1...`
+  4. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` in `.env.local` **and** Vercel → Redeploy
+  5. On a **trial** account: verify your personal phone under Phone Numbers → Verified Caller IDs (or you’ll get blocked)
+  6. Dashboard → **Send test text to me** (needs your phone on your profile)
 
 If those aren't configured yet, join still works — they screenshot email + password on the success screen (or ask Key to reset it later).
 

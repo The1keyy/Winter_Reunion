@@ -121,10 +121,10 @@ async function sendEmail(
 
 async function sendSms(
   payload: LoginDetailsPayload
-): Promise<{ ok: boolean; reason?: string }> {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM_NUMBER;
+): Promise<{ ok: boolean; reason?: string; to?: string }> {
+  const sid = process.env.TWILIO_ACCOUNT_SID?.trim();
+  const token = process.env.TWILIO_AUTH_TOKEN?.trim();
+  const from = process.env.TWILIO_FROM_NUMBER?.trim();
 
   if (!sid || !token || !from) {
     return {
@@ -165,14 +165,26 @@ async function sendSms(
     if (!response.ok) {
       const text = await response.text();
       console.error("sendSms (Twilio) failed", response.status, text);
-      return { ok: false, reason: "SMS provider rejected the send." };
+      let detail = "SMS provider rejected the send.";
+      try {
+        const parsed = JSON.parse(text) as { message?: string };
+        if (parsed.message) detail = parsed.message;
+      } catch {
+        // keep default
+      }
+      return { ok: false, reason: detail, to };
     }
 
-    return { ok: true };
+    return { ok: true, to };
   } catch (error) {
     console.error("sendSms failed", error);
-    return { ok: false, reason: "Could not reach the SMS provider." };
+    return { ok: false, reason: "Could not reach the SMS provider.", to };
   }
+}
+
+/** SMS-only helper for admin Dashboard testing. */
+export async function sendLoginSmsOnly(payload: LoginDetailsPayload) {
+  return sendSms(payload);
 }
 
 /**
