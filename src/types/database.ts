@@ -696,6 +696,27 @@ export interface Database {
         };
         Relationships: [];
       };
+      talk_post_likes: {
+        Row: {
+          id: string;
+          post_id: string;
+          profile_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          profile_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          profile_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       activity_log: {
         Row: {
           id: string;

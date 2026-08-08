@@ -4,13 +4,14 @@ import { AnnouncementList } from "@/components/announcements/announcement-list";
 import { NextMove, type NextMoveStep } from "@/components/guidance/next-move";
 import { PhonePrompt } from "@/components/profile/phone-prompt";
 import { TripOverview } from "@/components/trip/trip-overview";
+import { Avatar } from "@/components/ui/avatar";
 import { HomeUpdates } from "@/components/updates/home-updates";
 import { getActivities } from "@/lib/supabase/activities";
 import { getAnnouncements } from "@/lib/supabase/announcements";
 import { getCabins } from "@/lib/supabase/cabins";
 import { getPayments } from "@/lib/supabase/payments";
 import { getPolls } from "@/lib/supabase/polls";
-import { getProfile } from "@/lib/supabase/profiles";
+import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { getRegistration } from "@/lib/supabase/registrations";
 import { createClient } from "@/lib/supabase/server";
 import { getTalkPosts } from "@/lib/supabase/talk";
@@ -33,6 +34,7 @@ export default async function HomePage() {
     cabins,
     activities,
     talkPosts,
+    profiles,
   ] = await Promise.all([
     user ? getProfile(supabase, user.id) : Promise.resolve(null),
     getTripSettings(supabase),
@@ -43,7 +45,10 @@ export default async function HomePage() {
     getCabins(supabase),
     getActivities(supabase),
     getTalkPosts(supabase, 3),
+    getAllProfiles(supabase),
   ]);
+
+  const nameById = new Map(profiles.map((p) => [p.id, p.name]));
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
   const needsPhone = Boolean(user && profile && !profile.phone);
@@ -111,18 +116,21 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-7">
-      <header className="wr-fade-up flex flex-col gap-2">
-        <span className="wr-section-label">Home base</span>
-        <h1 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
-          {profile ? `Hey ${profile.name.split(" ")[0]}.` : "Hey."}
-        </h1>
-        <p className="max-w-lg text-sm leading-relaxed text-off-white/70 md:text-[15px]">
-          {trip
-            ? "Finish your checklist, then jump into whatever needs you. Keep it simple."
-            : canSetUpTrip
-              ? "Trip details aren't live yet — open Admin and set them so the crew has a target."
-              : "Trip details aren't set yet. RSVP anyway so Key knows your status."}
-        </p>
+      <header className="wr-fade-up flex items-center gap-3.5">
+        {profile ? <Avatar name={profile.name} size="lg" /> : null}
+        <div className="flex flex-col gap-1">
+          <span className="wr-section-label">Home base</span>
+          <h1 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
+            {profile ? `Hey ${profile.name.split(" ")[0]}.` : "Hey."}
+          </h1>
+          <p className="max-w-lg text-sm leading-relaxed text-off-white/70 md:text-[15px]">
+            {trip
+              ? "Finish your checklist, then jump into whatever needs you."
+              : canSetUpTrip
+                ? "Trip details aren't live yet — open Admin and set them."
+                : "Trip details aren't set yet. RSVP anyway so Key knows your status."}
+          </p>
+        </div>
       </header>
 
       <NextMove steps={steps} name={profile?.name} />
@@ -188,7 +196,7 @@ export default async function HomePage() {
             </Link>
           ) : null}
         </div>
-        <AnnouncementList announcements={announcements} />
+        <AnnouncementList announcements={announcements} nameById={nameById} />
       </section>
     </div>
   );

@@ -7,6 +7,7 @@ import {
 } from "@/app/(app)/cabins/actions";
 import { LinkPreviewCard } from "@/components/activities/link-preview-card";
 import { VoteButtons } from "@/components/guidance/vote-buttons";
+import { Avatar } from "@/components/ui/avatar";
 import type { CabinVoteResponse } from "@/lib/supabase/cabins";
 import type { Cabin } from "@/types/database";
 
@@ -16,6 +17,7 @@ interface CabinCardProps {
   noCount: number;
   myResponse?: CabinVoteResponse;
   isAdmin: boolean;
+  authorName?: string;
 }
 
 function priceLabel(cabin: Cabin) {
@@ -34,6 +36,7 @@ export function CabinCard({
   noCount,
   myResponse,
   isAdmin,
+  authorName,
 }: CabinCardProps) {
   const canVote = cabin.status === "proposed" || cabin.status === "voting";
   const votedYes = myResponse === "yes";
@@ -77,6 +80,14 @@ export function CabinCard({
           <h2 className="font-heading text-xl font-semibold text-off-white">
             {cabin.name}
           </h2>
+          {authorName ? (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Avatar name={authorName} size="xs" />
+              <span className="text-xs text-warm-gray">
+                added by <span className="text-off-white/70">{authorName}</span>
+              </span>
+            </div>
+          ) : null}
         </div>
         {price ? (
           <p className="shrink-0 text-right font-heading text-2xl font-semibold text-ember tabular-nums">

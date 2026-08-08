@@ -29,7 +29,7 @@ export function LinkPreviewCard({
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex overflow-hidden border border-warm-gray/30 bg-charcoal/40 transition-[border-color,background-color] duration-150 hover:border-ice/50 hover:bg-surface-raised"
+      className="group flex overflow-hidden rounded-xl border border-warm-gray/30 bg-charcoal/40 transition-[border-color,background-color] duration-150 hover:border-ice/50 hover:bg-surface-raised"
     >
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element -- remote OG images from many hosts

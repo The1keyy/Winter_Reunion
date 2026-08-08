@@ -39,6 +39,27 @@ export async function getTalkReplies(
   return data ?? [];
 }
 
+export interface TalkLikeRow {
+  post_id: string;
+  profile_id: string;
+}
+
+export async function getTalkLikes(
+  supabase: SupabaseClient<Database>
+): Promise<TalkLikeRow[]> {
+  const { data, error } = await supabase
+    .from("talk_post_likes")
+    .select("post_id, profile_id");
+
+  if (error) {
+    // Table may not exist yet if the migration hasn't run — degrade quietly.
+    console.error("getTalkLikes failed", error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
 export async function createTalkPost(
   supabase: SupabaseClient<Database>,
   authorId: string,
@@ -101,6 +122,43 @@ export async function deleteTalkReplyById(
 
   if (error) {
     console.error("deleteTalkReplyById failed", error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function likeTalkPostById(
+  supabase: SupabaseClient<Database>,
+  postId: string,
+  profileId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("talk_post_likes")
+    .insert({ post_id: postId, profile_id: profileId });
+
+  // Ignore unique-violation (already liked) — treat as success.
+  if (error && error.code !== "23505") {
+    console.error("likeTalkPostById failed", error);
+    return false;
+  }
+
+  return true;
+}
+
+export async function unlikeTalkPostById(
+  supabase: SupabaseClient<Database>,
+  postId: string,
+  profileId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("talk_post_likes")
+    .delete()
+    .eq("post_id", postId)
+    .eq("profile_id", profileId);
+
+  if (error) {
+    console.error("unlikeTalkPostById failed", error);
     return false;
   }
 

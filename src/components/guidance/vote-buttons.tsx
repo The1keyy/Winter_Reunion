@@ -18,7 +18,7 @@ function VoteSubmit({
       type="submit"
       disabled={pending}
       className={
-        "w-full min-h-12 border text-sm font-semibold transition-[background-color,border-color,transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-60 " +
+        "w-full min-h-12 rounded-xl border text-sm font-semibold transition-[background-color,border-color,transform,opacity] duration-150 active:scale-[0.97] disabled:opacity-60 " +
         (tone === "yes"
           ? selected
             ? "border-winter-green bg-winter-green text-off-white shadow-[0_0_24px_color-mix(in_oklab,var(--color-winter-green)_35%,transparent)]"

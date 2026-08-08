@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/client";
+import { Avatar } from "@/components/ui/avatar";
 import { useUser } from "@/hooks/useUser";
+import { createClient } from "@/lib/supabase/client";
 
 const desktopLinks = [
   { href: "/home", label: "Home" },
@@ -77,11 +78,17 @@ export function NavBar() {
           </nav>
         </div>
 
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2.5">
           {!loading && profile ? (
-            <span className="hidden text-sm font-medium text-off-white/80 sm:inline">
-              {profile.name}
-            </span>
+            <Link
+              href="/home"
+              className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80"
+            >
+              <span className="hidden text-sm font-medium text-off-white/80 sm:inline">
+                {profile.name}
+              </span>
+              <Avatar name={profile.name} size="sm" />
+            </Link>
           ) : null}
           <button type="button" onClick={handleSignOut} className="wr-btn !min-h-9 !px-3 !py-1.5 text-xs">
             Sign out

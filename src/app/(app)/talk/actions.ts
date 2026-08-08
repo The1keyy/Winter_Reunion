@@ -8,6 +8,8 @@ import {
   createTalkReply,
   deleteTalkPostById,
   deleteTalkReplyById,
+  likeTalkPostById,
+  unlikeTalkPostById,
 } from "@/lib/supabase/talk";
 import { talkPostSchema, talkReplySchema } from "@/lib/validations/talk";
 
@@ -116,4 +118,36 @@ export async function deleteTalkReply(
   // RLS enforces own-or-admin.
   await deleteTalkReplyById(supabase, id);
   revalidatePath("/talk");
+}
+
+export async function likeTalkPost(
+  postId: string,
+  _formData: FormData
+): Promise<void> {
+  void _formData;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await likeTalkPostById(supabase, postId, user.id);
+  revalidatePath("/talk");
+  revalidatePath("/home");
+}
+
+export async function unlikeTalkPost(
+  postId: string,
+  _formData: FormData
+): Promise<void> {
+  void _formData;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await unlikeTalkPostById(supabase, postId, user.id);
+  revalidatePath("/talk");
+  revalidatePath("/home");
 }

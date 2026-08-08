@@ -6,7 +6,7 @@ import {
   getActivities,
   getActivityResponses,
 } from "@/lib/supabase/activities";
-import { getProfile } from "@/lib/supabase/profiles";
+import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
 import type { ActivityResponseValue } from "@/types/database";
 
@@ -20,13 +20,15 @@ export default async function ActivitiesPage() {
     redirect("/login");
   }
 
-  const [profile, activities, responses] = await Promise.all([
+  const [profile, activities, responses, profiles] = await Promise.all([
     getProfile(supabase, user.id),
     getActivities(supabase),
     getActivityResponses(supabase),
+    getAllProfiles(supabase),
   ]);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
+  const nameById = new Map(profiles.map((p) => [p.id, p.name]));
 
   const responsesByActivity = new Map<string, { yes: number; no: number }>();
   const myResponses = new Map<string, ActivityResponseValue>();
@@ -100,6 +102,11 @@ export default async function ActivitiesPage() {
                   noCount={counts.no}
                   myResponse={myResponses.get(activity.id)}
                   isAdmin={isAdmin}
+                  authorName={
+                    activity.created_by
+                      ? nameById.get(activity.created_by)
+                      : undefined
+                  }
                 />
               );
             })}
@@ -126,6 +133,11 @@ export default async function ActivitiesPage() {
                   noCount={counts.no}
                   myResponse={myResponses.get(activity.id)}
                   isAdmin={isAdmin}
+                  authorName={
+                    activity.created_by
+                      ? nameById.get(activity.created_by)
+                      : undefined
+                  }
                 />
               );
             })}

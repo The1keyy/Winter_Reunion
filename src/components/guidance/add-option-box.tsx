@@ -25,9 +25,9 @@ export function AddOptionBox({ label, children, doneAt }: AddOptionBoxProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex w-full items-center gap-3 border border-dashed border-warm-gray/40 bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color] duration-150 hover:border-ember/60 hover:bg-surface"
+        className="group flex w-full items-center gap-3 rounded-2xl border border-dashed border-warm-gray/40 bg-surface/40 px-4 py-4 text-left transition-[border-color,background-color] duration-150 hover:border-ember/60 hover:bg-surface"
       >
-        <span className="flex size-10 shrink-0 items-center justify-center border border-ember/50 bg-ember/10 font-heading text-xl font-semibold text-ember transition-colors group-hover:bg-ember group-hover:text-ember-ink">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-ember/50 bg-ember/10 font-heading text-xl font-semibold text-ember transition-colors group-hover:bg-ember group-hover:text-ember-ink">
           +
         </span>
         <span className="flex flex-col gap-0.5">

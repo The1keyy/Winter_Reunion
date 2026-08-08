@@ -7,7 +7,7 @@ import {
   getCabinVotes,
   type CabinVoteResponse,
 } from "@/lib/supabase/cabins";
-import { getProfile } from "@/lib/supabase/profiles";
+import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CabinsPage() {
@@ -20,13 +20,15 @@ export default async function CabinsPage() {
     redirect("/login");
   }
 
-  const [profile, cabins, votes] = await Promise.all([
+  const [profile, cabins, votes, profiles] = await Promise.all([
     getProfile(supabase, user.id),
     getCabins(supabase),
     getCabinVotes(supabase),
+    getAllProfiles(supabase),
   ]);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
+  const nameById = new Map(profiles.map((p) => [p.id, p.name]));
 
   const responsesByCabin = new Map<string, { yes: number; no: number }>();
   const myResponses = new Map<string, CabinVoteResponse>();
@@ -98,6 +100,9 @@ export default async function CabinsPage() {
                   noCount={counts.no}
                   myResponse={myResponses.get(cabin.id)}
                   isAdmin={isAdmin}
+                  authorName={
+                    cabin.created_by ? nameById.get(cabin.created_by) : undefined
+                  }
                 />
               );
             })}
@@ -124,6 +129,9 @@ export default async function CabinsPage() {
                   noCount={counts.no}
                   myResponse={myResponses.get(cabin.id)}
                   isAdmin={isAdmin}
+                  authorName={
+                    cabin.created_by ? nameById.get(cabin.created_by) : undefined
+                  }
                 />
               );
             })}

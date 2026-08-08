@@ -8,6 +8,7 @@ import {
 } from "@/app/(app)/activities/actions";
 import { LinkPreviewCard } from "@/components/activities/link-preview-card";
 import { VoteButtons } from "@/components/guidance/vote-buttons";
+import { Avatar } from "@/components/ui/avatar";
 import type { Activity, ActivityResponseValue } from "@/types/database";
 
 interface ActivityCardProps {
@@ -16,6 +17,7 @@ interface ActivityCardProps {
   noCount: number;
   myResponse?: ActivityResponseValue;
   isAdmin: boolean;
+  authorName?: string;
 }
 
 export function ActivityCard({
@@ -24,6 +26,7 @@ export function ActivityCard({
   noCount,
   myResponse,
   isAdmin,
+  authorName,
 }: ActivityCardProps) {
   const canVote = activity.status !== "cancelled";
   const votedYes = myResponse === "yes";
@@ -60,6 +63,14 @@ export function ActivityCard({
           <h2 className="font-heading text-xl font-semibold text-off-white">
             {activity.name}
           </h2>
+          {authorName ? (
+            <div className="mt-1.5 flex items-center gap-1.5">
+              <Avatar name={authorName} size="xs" />
+              <span className="text-xs text-warm-gray">
+                added by <span className="text-off-white/70">{authorName}</span>
+              </span>
+            </div>
+          ) : null}
         </div>
         {activity.cost_per_person != null ? (
           <p className="shrink-0 text-right font-heading text-2xl font-semibold text-ember tabular-nums">
