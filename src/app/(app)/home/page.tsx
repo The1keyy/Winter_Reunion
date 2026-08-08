@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { TripOverview } from "@/components/trip/trip-overview";
 import { getProfile } from "@/lib/supabase/profiles";
+import { getRegistration } from "@/lib/supabase/registrations";
 import { createClient } from "@/lib/supabase/server";
 import { getTripSettings } from "@/lib/supabase/trip-settings";
 
@@ -11,12 +12,28 @@ export default async function HomePage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [profile, trip] = await Promise.all([
+  const [profile, trip, registration] = await Promise.all([
     user ? getProfile(supabase, user.id) : Promise.resolve(null),
     getTripSettings(supabase),
+    user ? getRegistration(supabase, user.id) : Promise.resolve(null),
   ]);
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
+
+  const rsvpStatus = !registration
+    ? "You haven't RSVP'd yet."
+    : registration.attending
+      ? "You're marked as attending."
+      : "You're marked as not attending.";
+
+  const rsvpLink = (
+    <Link
+      href="/rsvp"
+      className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+    >
+      {registration ? "Update RSVP" : "RSVP now"}
+    </Link>
+  );
 
   if (!trip) {
     return (
@@ -29,14 +46,22 @@ export default async function HomePage() {
             ? "Trip details haven't been set up yet. Add the trip name, dates, and location to get started."
             : "Trip details haven't been set up yet. Check back soon."}
         </p>
-        {canSetUpTrip ? (
+        <div className="mt-2 flex flex-wrap gap-3">
+          {canSetUpTrip ? (
+            <Link
+              href="/admin/trip-settings"
+              className="w-fit border border-off-white px-4 py-2.5 text-sm font-normal text-off-white transition-opacity hover:opacity-80"
+            >
+              Set up trip details
+            </Link>
+          ) : null}
           <Link
-            href="/admin/trip-settings"
-            className="mt-2 w-fit border border-off-white px-4 py-2.5 text-sm font-normal text-off-white transition-opacity hover:opacity-80"
+            href="/rsvp"
+            className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
           >
-            Set up trip details
+            {registration ? "Update RSVP" : "RSVP now"}
           </Link>
-        ) : null}
+        </div>
       </div>
     );
   }
@@ -57,6 +82,10 @@ export default async function HomePage() {
         ) : null}
       </div>
       <TripOverview trip={trip} />
+      <div className="flex items-center justify-between gap-4 border-t border-warm-gray/20 pt-4">
+        <p className="text-sm font-normal text-off-white/70">{rsvpStatus}</p>
+        {rsvpLink}
+      </div>
     </div>
   );
 }
