@@ -81,6 +81,12 @@ export default async function HomePage() {
             >
               View cabins
             </Link>
+            <Link
+              href="/activities"
+              className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
+            >
+              View activities
+            </Link>
           </div>
         </div>
         {announcementsSection}
@@ -118,6 +124,12 @@ export default async function HomePage() {
             className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
           >
             Cabins
+          </Link>
+          <Link
+            href="/activities"
+            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+          >
+            Activities
           </Link>
         </div>
       </div>
