@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 
 import { signIn, type SignInState } from "@/app/login/actions";
+import { PasswordField } from "@/components/auth/password-field";
+import { FormNotice } from "@/components/ui/form-notice";
 import { signInSchema } from "@/lib/validations/auth";
 
 interface FieldErrors {
@@ -66,6 +68,7 @@ export function LoginForm() {
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="you@example.com"
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);
@@ -78,33 +81,20 @@ export function LoginForm() {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="password"
-          className="text-sm font-normal text-off-white/80"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            if (fieldErrors.password) validate(email, event.target.value);
-          }}
-          className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
-        />
-        {fieldErrors.password ? (
-          <p className="text-sm text-off-white/70">{fieldErrors.password}</p>
-        ) : null}
-      </div>
+      <PasswordField
+        id="password"
+        name="password"
+        label="Password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(value) => {
+          setPassword(value);
+          if (fieldErrors.password) validate(email, value);
+        }}
+        error={fieldErrors.password}
+      />
 
-      {state.error ? (
-        <p className="text-sm text-off-white/90">{state.error}</p>
-      ) : null}
+      {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
 
       <button
         type="submit"
@@ -113,6 +103,11 @@ export function LoginForm() {
       >
         {isPending ? "Signing in..." : "Sign in"}
       </button>
+
+      <p className="text-sm font-normal text-off-white/50">
+        Forgot your password? Ask your trip organizer to help you get back
+        in.
+      </p>
     </form>
   );
 }

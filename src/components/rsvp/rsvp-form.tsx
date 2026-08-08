@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { submitRsvp, type RsvpState } from "@/app/(app)/rsvp/actions";
+import { FormNotice } from "@/components/ui/form-notice";
 import { registrationSchema } from "@/lib/validations/registration";
 import type { Registration } from "@/types/database";
 
@@ -134,7 +135,7 @@ export function RsvpForm({ registration }: RsvpFormProps) {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="dietaryRestrictions" className={labelClass}>
-          Dietary restrictions
+          Dietary restrictions (optional)
         </label>
         <textarea
           id="dietaryRestrictions"
@@ -150,7 +151,7 @@ export function RsvpForm({ registration }: RsvpFormProps) {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="notes" className={labelClass}>
-          Notes
+          Notes (optional)
         </label>
         <textarea
           id="notes"
@@ -162,12 +163,12 @@ export function RsvpForm({ registration }: RsvpFormProps) {
         />
       </div>
 
-      {state.error ? (
-        <p className="text-sm text-off-white/90">{state.error}</p>
-      ) : null}
+      {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
 
       {state.success ? (
-        <p className="text-sm text-off-white/90">RSVP saved.</p>
+        <FormNotice tone="success">
+          RSVP saved. You can come back and update it anytime.
+        </FormNotice>
       ) : null}
 
       <button

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { JoinForm } from "@/components/auth/join-form";
 
 export default function JoinPage() {
@@ -9,11 +11,23 @@ export default function JoinPage() {
             Winter Reunion 2027
           </h1>
           <p className="text-sm font-normal text-off-white/70">
-            Enter the trip passcode to create your account.
+            Fill this out to create your account. You&apos;ll need the trip
+            passcode from your organizer to finish signing up.
           </p>
         </div>
 
         <JoinForm />
+
+        <p className="text-sm font-normal text-off-white/50">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="text-off-white/80 underline underline-offset-4 hover:text-off-white"
+          >
+            Sign in instead
+          </Link>
+          .
+        </p>
       </div>
     </main>
   );

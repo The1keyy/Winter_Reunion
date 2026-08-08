@@ -9,7 +9,7 @@ export default function LoginPage() {
             Winter Reunion 2027
           </h1>
           <p className="text-sm font-normal text-off-white/70">
-            Sign in to continue.
+            Sign in with the email and password you used to join the trip.
           </p>
         </div>
 

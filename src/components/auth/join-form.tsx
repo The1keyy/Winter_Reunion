@@ -3,6 +3,8 @@
 import { useActionState, useState } from "react";
 
 import { join, type JoinState } from "@/app/join/actions";
+import { PasswordField } from "@/components/auth/password-field";
+import { FormNotice } from "@/components/ui/form-notice";
 import { joinSchema } from "@/lib/validations/join";
 
 interface FieldErrors {
@@ -76,6 +78,7 @@ export function JoinForm() {
           name="name"
           type="text"
           autoComplete="name"
+          placeholder="Your full name"
           value={name}
           onChange={(event) => {
             setName(event.target.value);
@@ -86,7 +89,11 @@ export function JoinForm() {
         />
         {fieldErrors.name ? (
           <p className="text-sm text-off-white/70">{fieldErrors.name}</p>
-        ) : null}
+        ) : (
+          <p className="text-sm font-normal text-off-white/50">
+            This is how other trip members will see you.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -101,6 +108,7 @@ export function JoinForm() {
           name="email"
           type="email"
           autoComplete="email"
+          placeholder="you@example.com"
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);
@@ -111,33 +119,26 @@ export function JoinForm() {
         />
         {fieldErrors.email ? (
           <p className="text-sm text-off-white/70">{fieldErrors.email}</p>
-        ) : null}
+        ) : (
+          <p className="text-sm font-normal text-off-white/50">
+            You&apos;ll use this to sign in next time.
+          </p>
+        )}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label
-          htmlFor="password"
-          className="text-sm font-normal text-off-white/80"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) => {
-            setPassword(event.target.value);
-            if (fieldErrors.password)
-              validate(name, email, event.target.value, passcode);
-          }}
-          className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
-        />
-        {fieldErrors.password ? (
-          <p className="text-sm text-off-white/70">{fieldErrors.password}</p>
-        ) : null}
-      </div>
+      <PasswordField
+        id="password"
+        name="password"
+        label="Password"
+        autoComplete="new-password"
+        value={password}
+        onChange={(value) => {
+          setPassword(value);
+          if (fieldErrors.password) validate(name, email, value, passcode);
+        }}
+        hint="Use at least 6 characters. You'll need this to sign in later."
+        error={fieldErrors.password}
+      />
 
       <div className="flex flex-col gap-2">
         <label
@@ -161,15 +162,17 @@ export function JoinForm() {
         />
         {fieldErrors.passcode ? (
           <p className="text-sm text-off-white/70">{fieldErrors.passcode}</p>
-        ) : null}
+        ) : (
+          <p className="text-sm font-normal text-off-white/50">
+            Ask your trip organizer if you don&apos;t have this yet.
+          </p>
+        )}
       </div>
 
-      {state.error ? (
-        <p className="text-sm text-off-white/90">{state.error}</p>
-      ) : null}
+      {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
 
       {state.message ? (
-        <p className="text-sm text-off-white/90">{state.message}</p>
+        <FormNotice tone="success">{state.message}</FormNotice>
       ) : null}
 
       <button
