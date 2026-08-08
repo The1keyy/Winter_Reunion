@@ -33,7 +33,20 @@ At join they enter first name + last initial, email, mobile, and a password they
 - **Email:** set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (and `NEXT_PUBLIC_SITE_URL`)
 - **SMS:** set `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_FROM_NUMBER`
 
-If those aren't configured yet, join still works — they just need to save the password themselves (or ask Key to reset it later).
+If those aren't configured yet, join still works — they screenshot email + password on the success screen (or ask Key to reset it later).
+
+### Supabase auth redirect (fixes dead "Confirm" links)
+
+In Supabase → **Authentication → URL Configuration**:
+
+- **Site URL:** `https://winter-reunion.vercel.app`
+- **Redirect URLs** (add all):
+  - `https://winter-reunion.vercel.app/auth/callback`
+  - `https://winter-reunion.vercel.app/login`
+  - `https://winter-reunion.vercel.app/**`
+  - `http://localhost:3000/auth/callback` (for local)
+
+Optional but simplest for a private trip: **Authentication → Providers → Email → Confirm email = OFF**, so people go straight in after join with no Confirm step.
 
 ## Database migrations
 

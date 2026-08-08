@@ -11,8 +11,19 @@ export interface JoinState {
   success?: boolean;
   displayName?: string;
   email?: string;
+  password?: string;
+  phone?: string;
+  loginUrl?: string;
   emailSent?: boolean;
   smsSent?: boolean;
+  needsEmailConfirm?: boolean;
+}
+
+function siteUrl() {
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+    "https://winter-reunion.vercel.app"
+  );
 }
 
 export async function join(
@@ -40,6 +51,7 @@ export async function join(
   }
 
   const displayName = formatJoinDisplayName(firstName, lastInitial);
+  const loginUrl = `${siteUrl()}/login`;
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({
@@ -47,6 +59,8 @@ export async function join(
     password,
     options: {
       data: { full_name: displayName },
+      // So Supabase "Confirm your email" lands on our app, not a dead page.
+      emailRedirectTo: `${siteUrl()}/auth/callback?next=/home`,
     },
   });
 
@@ -54,7 +68,6 @@ export async function join(
     return { error: "Could not create your account. Please try again." };
   }
 
-  // Trigger usually creates the profile; ensureProfile is a safe fallback.
   await ensureProfile(supabase, data.user);
   await updateProfilePhone(supabase, data.user.id, phone);
 
@@ -65,23 +78,25 @@ export async function join(
     phone,
   });
 
-  if (!data.session) {
-    return {
-      success: true,
-      displayName,
-      email,
-      emailSent: delivery.emailSent,
-      smsSent: delivery.smsSent,
-      message:
-        "Account created. Confirm your email if asked, then sign in. We also tried to send your login details.",
-    };
-  }
-
-  return {
-    success: true,
+  const base = {
+    success: true as const,
     displayName,
     email,
+    password,
+    phone,
+    loginUrl,
     emailSent: delivery.emailSent,
     smsSent: delivery.smsSent,
   };
+
+  if (!data.session) {
+    return {
+      ...base,
+      needsEmailConfirm: true,
+      message:
+        "If you get a Confirm email from Supabase, tap it — it should open this site. Then sign in with the email + password below (screenshot them).",
+    };
+  }
+
+  return base;
 }

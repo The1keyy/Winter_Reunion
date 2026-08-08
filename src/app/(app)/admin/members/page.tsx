@@ -29,10 +29,28 @@ export default async function MembersPage() {
           Members
         </h1>
         <p className="text-sm font-normal text-off-white/70">
-          Set a new password for anyone who&apos;s locked out. There&apos;s
-          no way to view someone&apos;s existing password - it&apos;s never
-          stored anywhere in a readable form - but you can set a new one for
-          them and pass it along yourself.
+          Everyone signs in with their <span className="text-off-white">email</span>{" "}
+          + the password they chose at join (they screenshot it). You can&apos;t
+          see their old password — set a new one below and text it to them.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-2 border border-warm-gray/20 p-4">
+        <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
+          Your admin login
+        </span>
+        <p className="text-sm font-normal text-off-white">
+          <span className="text-off-white/50">Name: </span>
+          {profile.name}
+        </p>
+        <p className="text-sm font-normal text-off-white">
+          <span className="text-off-white/50">Email: </span>
+          {profile.email || user.email}
+        </p>
+        <p className="text-sm font-normal text-off-white/60">
+          Sign-in page: https://winter-reunion.vercel.app/login — use the
+          password you picked when you created this account (or reset it below
+          on your own row).
         </p>
       </div>
 
@@ -47,16 +65,21 @@ export default async function MembersPage() {
               key={member.id}
               className="flex flex-col gap-3 border border-warm-gray/20 p-4"
             >
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-normal text-off-white">
-                  {member.name}
-                </h2>
-                <span className="text-sm font-normal text-off-white/50">
-                  {member.email}
-                </span>
-                <span className="border border-warm-gray/50 px-1.5 py-0.5 text-xs text-off-white/70">
-                  {member.role}
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base font-normal text-off-white">
+                    {member.name}
+                  </h2>
+                  <span className="border border-warm-gray/50 px-1.5 py-0.5 text-xs text-off-white/70">
+                    {member.role}
+                  </span>
+                </div>
+                <p className="text-sm font-normal text-off-white/70">
+                  Email (login): {member.email}
+                </p>
+                <p className="text-sm font-normal text-off-white/70">
+                  Phone: {member.phone ?? "not added"}
+                </p>
               </div>
               <ResetPasswordForm
                 profileId={member.id}

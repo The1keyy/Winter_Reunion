@@ -68,44 +68,70 @@ export function JoinForm() {
       : null;
 
   if (state.success) {
-    const deliveryBits = [
-      state.emailSent ? "email" : null,
-      state.smsSent ? "text" : null,
-    ].filter(Boolean);
+    const name = state.displayName ?? previewName ?? "Member";
+    const email = state.email ?? values.email;
+    const password = state.password ?? values.password;
+    const phone = state.phone ?? values.phone;
+    const loginUrl = state.loginUrl ?? "https://winter-reunion.vercel.app/login";
+    const continueHref = state.needsEmailConfirm ? "/login" : "/home";
 
     return (
       <div className="flex flex-col gap-5">
         <FormNotice tone="success">
-          You&apos;re in{state.displayName ? `, ${state.displayName}` : ""}.
+          You&apos;re in, {name}. Screenshot this card before you leave.
         </FormNotice>
-        <div className="flex flex-col gap-2 border border-warm-gray/20 p-4">
-          <p className="text-sm font-normal text-off-white">
-            Your sign-in is your email
-            {state.email ? ` (${state.email})` : ""} + the password you chose.
+
+        <div className="flex flex-col gap-3 border border-off-white/40 p-4">
+          <p className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
+            Your login — screenshot this
           </p>
-          {deliveryBits.length > 0 ? (
-            <p className="text-sm font-normal text-off-white/70">
-              We sent those details to your {deliveryBits.join(" and ")} so you
-              don&apos;t have to remember them alone.
-            </p>
-          ) : (
-            <p className="text-sm font-normal text-off-white/70">
-              Screenshot or save your email + password now. Key can also reset
-              it later if you get locked out. (Auto email/text turns on once
-              Key finishes provider setup.)
-            </p>
-          )}
-          {state.message ? (
-            <p className="text-sm font-normal text-off-white/60">
-              {state.message}
-            </p>
-          ) : null}
+          <p className="text-sm font-normal text-off-white">
+            <span className="text-off-white/50">Name: </span>
+            {name}
+          </p>
+          <p className="text-sm font-normal text-off-white">
+            <span className="text-off-white/50">Email (username): </span>
+            {email}
+          </p>
+          <p className="text-sm font-normal text-off-white">
+            <span className="text-off-white/50">Password: </span>
+            {password}
+          </p>
+          <p className="text-sm font-normal text-off-white">
+            <span className="text-off-white/50">Phone: </span>
+            {phone}
+          </p>
+          <p className="text-sm font-normal text-off-white">
+            <span className="text-off-white/50">Sign-in page: </span>
+            {loginUrl}
+          </p>
         </div>
+
+        <p className="text-sm font-normal text-off-white/70">
+          Use that email + password every time. If a Confirm email shows up,
+          tap it — it should open this site. Never mind if it looks weird; your
+          real login is the screenshot above.
+        </p>
+
+        {state.emailSent || state.smsSent ? (
+          <p className="text-sm font-normal text-off-white/50">
+            We also tried to send these details to your{" "}
+            {[state.emailSent ? "email" : null, state.smsSent ? "text" : null]
+              .filter(Boolean)
+              .join(" and ")}
+            .
+          </p>
+        ) : null}
+
+        {state.message ? (
+          <p className="text-sm font-normal text-off-white/60">{state.message}</p>
+        ) : null}
+
         <Link
-          href="/home"
+          href={continueHref}
           className="w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal"
         >
-          Continue to home
+          {state.needsEmailConfirm ? "Go to sign in" : "Continue to home"}
         </Link>
       </div>
     );
@@ -196,8 +222,7 @@ export function JoinForm() {
           <p className="text-sm text-off-white/70">{fieldErrors.email}</p>
         ) : (
           <p className="text-sm font-normal text-off-white/50">
-            This is your username for signing in. We&apos;ll email your login
-            here.
+            This is your username for signing in.
           </p>
         )}
       </div>
@@ -224,8 +249,7 @@ export function JoinForm() {
           <p className="text-sm text-off-white/70">{fieldErrors.phone}</p>
         ) : (
           <p className="text-sm font-normal text-off-white/50">
-            We&apos;ll text your login here too (once SMS is turned on), and Key
-            can reach you for urgent trip updates.
+            So Key can reach you. Screenshot your password on the next screen.
           </p>
         )}
       </div>
@@ -237,7 +261,7 @@ export function JoinForm() {
         autoComplete="new-password"
         value={values.password}
         onChange={(value) => updateField("password", value)}
-        hint="Pick anything you'll remember — at least 6 characters. We'll send it to your email/phone so you don't lose it."
+        hint="At least 6 characters. Next screen shows it so you can screenshot it."
         error={fieldErrors.password}
       />
 
