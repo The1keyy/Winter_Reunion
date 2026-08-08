@@ -29,6 +29,28 @@ export default async function HomePage() {
       ? "You're marked as attending."
       : "You're marked as not attending.";
 
+  const quickLinks = [
+    { href: "/rsvp", label: registration ? "Update RSVP" : "RSVP now" },
+    { href: "/cabins", label: "Cabins" },
+    { href: "/activities", label: "Activities" },
+    { href: "/suggestions", label: "Suggestions" },
+    { href: "/polls", label: "Polls" },
+  ];
+
+  const quickLinksRow = (
+    <div className="flex flex-wrap gap-3">
+      {quickLinks.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
+        >
+          {link.label}
+        </Link>
+      ))}
+    </div>
+  );
+
   const announcementsSection = (
     <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
       <div className="flex items-center justify-between gap-4">
@@ -60,7 +82,7 @@ export default async function HomePage() {
               ? "Trip details haven't been set up yet. Add the trip name, dates, and location to get started."
               : "Trip details haven't been set up yet. Check back soon."}
           </p>
-          <div className="mt-2 flex flex-wrap gap-3">
+          <div className="mt-2 flex flex-col gap-3">
             {canSetUpTrip ? (
               <Link
                 href="/admin/trip-settings"
@@ -69,24 +91,7 @@ export default async function HomePage() {
                 Set up trip details
               </Link>
             ) : null}
-            <Link
-              href="/rsvp"
-              className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
-            >
-              {registration ? "Update RSVP" : "RSVP now"}
-            </Link>
-            <Link
-              href="/cabins"
-              className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
-            >
-              View cabins
-            </Link>
-            <Link
-              href="/activities"
-              className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
-            >
-              View activities
-            </Link>
+            {quickLinksRow}
           </div>
         </div>
         {announcementsSection}
@@ -110,28 +115,9 @@ export default async function HomePage() {
         ) : null}
       </div>
       <TripOverview trip={trip} />
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-warm-gray/20 pt-4">
+      <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
         <p className="text-sm font-normal text-off-white/70">{rsvpStatus}</p>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/rsvp"
-            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-          >
-            {registration ? "Update RSVP" : "RSVP now"}
-          </Link>
-          <Link
-            href="/cabins"
-            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-          >
-            Cabins
-          </Link>
-          <Link
-            href="/activities"
-            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-          >
-            Activities
-          </Link>
-        </div>
+        {quickLinksRow}
       </div>
       {announcementsSection}
     </div>
