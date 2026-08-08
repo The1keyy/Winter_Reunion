@@ -11,8 +11,9 @@ export default function JoinPage() {
             Winter Reunion 2027
           </h1>
           <p className="text-sm font-normal text-off-white/70">
-            Quick setup: first name, last initial, email, a password you pick,
-            and the trip passcode from Key.
+            First name, last initial, email, mobile, a password you pick, and
+            Key&apos;s trip passcode. We&apos;ll send your login to your email
+            (and text when SMS is on).
           </p>
         </div>
 

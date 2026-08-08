@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
 
 import { join, type JoinState } from "@/app/join/actions";
@@ -11,6 +12,7 @@ interface FormValues {
   firstName: string;
   lastInitial: string;
   email: string;
+  phone: string;
   password: string;
   passcode: string;
 }
@@ -22,6 +24,7 @@ const initialValues: FormValues = {
   firstName: "",
   lastInitial: "",
   email: "",
+  phone: "",
   password: "",
   passcode: "",
 };
@@ -63,6 +66,50 @@ export function JoinForm() {
     values.firstName.trim() && values.lastInitial.trim()
       ? `${values.firstName.trim()} ${values.lastInitial.trim().toUpperCase()}.`
       : null;
+
+  if (state.success) {
+    const deliveryBits = [
+      state.emailSent ? "email" : null,
+      state.smsSent ? "text" : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="flex flex-col gap-5">
+        <FormNotice tone="success">
+          You&apos;re in{state.displayName ? `, ${state.displayName}` : ""}.
+        </FormNotice>
+        <div className="flex flex-col gap-2 border border-warm-gray/20 p-4">
+          <p className="text-sm font-normal text-off-white">
+            Your sign-in is your email
+            {state.email ? ` (${state.email})` : ""} + the password you chose.
+          </p>
+          {deliveryBits.length > 0 ? (
+            <p className="text-sm font-normal text-off-white/70">
+              We sent those details to your {deliveryBits.join(" and ")} so you
+              don&apos;t have to remember them alone.
+            </p>
+          ) : (
+            <p className="text-sm font-normal text-off-white/70">
+              Screenshot or save your email + password now. Key can also reset
+              it later if you get locked out. (Auto email/text turns on once
+              Key finishes provider setup.)
+            </p>
+          )}
+          {state.message ? (
+            <p className="text-sm font-normal text-off-white/60">
+              {state.message}
+            </p>
+          ) : null}
+        </div>
+        <Link
+          href="/home"
+          className="w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal"
+        >
+          Continue to home
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -149,7 +196,36 @@ export function JoinForm() {
           <p className="text-sm text-off-white/70">{fieldErrors.email}</p>
         ) : (
           <p className="text-sm font-normal text-off-white/50">
-            This is how you sign back in later.
+            This is your username for signing in. We&apos;ll email your login
+            here.
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="phone"
+          className="text-sm font-normal text-off-white/80"
+        >
+          Mobile number
+        </label>
+        <input
+          id="phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          placeholder="(555) 123-4567"
+          value={values.phone}
+          onChange={(event) => updateField("phone", event.target.value)}
+          className={inputClass}
+        />
+        {fieldErrors.phone ? (
+          <p className="text-sm text-off-white/70">{fieldErrors.phone}</p>
+        ) : (
+          <p className="text-sm font-normal text-off-white/50">
+            We&apos;ll text your login here too (once SMS is turned on), and Key
+            can reach you for urgent trip updates.
           </p>
         )}
       </div>
@@ -161,7 +237,7 @@ export function JoinForm() {
         autoComplete="new-password"
         value={values.password}
         onChange={(value) => updateField("password", value)}
-        hint="Pick anything you'll remember — at least 6 characters. Show it once to double-check."
+        hint="Pick anything you'll remember — at least 6 characters. We'll send it to your email/phone so you don't lose it."
         error={fieldErrors.password}
       />
 
@@ -191,9 +267,6 @@ export function JoinForm() {
       </div>
 
       {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
-      {state.message ? (
-        <FormNotice tone="success">{state.message}</FormNotice>
-      ) : null}
 
       <button
         type="submit"

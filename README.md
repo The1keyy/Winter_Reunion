@@ -25,8 +25,15 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 New members self-signup at `/join`, gated by a single shared passcode (set via the `TRIP_JOIN_PASSCODE` env var - see `.env.example`). This page is intentionally not linked anywhere in the app UI (no nav bar or login page link), so share the URL and passcode directly with people you're inviting, e.g.:
 
 ```
-https://your-deployed-domain.com/join
+https://winter-reunion.vercel.app/join
 ```
+
+At join they enter first name + last initial, email, mobile, and a password they choose. The app tries to email and text those login details once (password is never stored in readable form afterward):
+
+- **Email:** set `RESEND_API_KEY` + `RESEND_FROM_EMAIL` (and `NEXT_PUBLIC_SITE_URL`)
+- **SMS:** set `TWILIO_ACCOUNT_SID` + `TWILIO_AUTH_TOKEN` + `TWILIO_FROM_NUMBER`
+
+If those aren't configured yet, join still works — they just need to save the password themselves (or ask Key to reset it later).
 
 ## Database migrations
 
