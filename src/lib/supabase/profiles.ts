@@ -45,6 +45,30 @@ export async function getAllProfiles(
 }
 
 /**
+ * Updates the current user's phone number. Relies on the
+ * "profiles_update_self_or_admin" RLS policy.
+ */
+export async function updateProfilePhone(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  phone: string | null
+): Promise<Profile | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ phone })
+    .eq("id", userId)
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("updateProfilePhone failed", error);
+    return null;
+  }
+
+  return data;
+}
+
+/**
  * Creates a profile row with role "member" the first time a user signs in.
  * Safe to call on every sign-in - it's a no-op if the profile already exists.
  * Relies on the "profiles_insert_self_or_admin" RLS policy, which allows a

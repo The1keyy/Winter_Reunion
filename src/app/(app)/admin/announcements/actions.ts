@@ -45,14 +45,23 @@ export async function postAnnouncement(
   const parsed = announcementSchema.safeParse({
     title: formData.get("title"),
     body: formData.get("body"),
+    linkUrl: formData.get("linkUrl"),
     pinned: formData.get("pinned"),
   });
 
   if (!parsed.success) {
-    return { error: "Enter a title and announcement text." };
+    return {
+      error:
+        "Check the title, message, and link (links must start with https://).",
+    };
   }
 
-  const result = await createAnnouncement(supabase, user.id, parsed.data);
+  const result = await createAnnouncement(supabase, user.id, {
+    title: parsed.data.title,
+    body: parsed.data.body,
+    link_url: parsed.data.linkUrl,
+    pinned: parsed.data.pinned,
+  });
 
   if (!result) {
     return { error: "Could not post the announcement. Please try again." };

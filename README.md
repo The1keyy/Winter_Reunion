@@ -28,6 +28,10 @@ New members self-signup at `/join`, gated by a single shared passcode (set via t
 https://your-deployed-domain.com/join
 ```
 
+## Database migrations
+
+After pulling schema changes, run new SQL files in `supabase/migrations/` in the Supabase SQL editor (in filename order) if they aren't applied yet. Example: `20260808000002_announcement_link_url.sql` adds optional links on announcements.
+
 ## Resetting a member's password
 
 If someone gets locked out, the primary admin (role `admin`, not `co-admin`) can set a new password for them at `/admin/members` - there's no way to view an existing password since it's never stored anywhere in readable form, but a new one can be set directly and passed along.

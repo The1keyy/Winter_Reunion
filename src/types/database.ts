@@ -159,6 +159,7 @@ export interface Database {
           author_id: string | null;
           title: string;
           body: string;
+          link_url: string | null;
           pinned: boolean;
           created_at: string;
           updated_at: string;
@@ -168,6 +169,7 @@ export interface Database {
           author_id?: string | null;
           title: string;
           body: string;
+          link_url?: string | null;
           pinned?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -177,6 +179,7 @@ export interface Database {
           author_id?: string | null;
           title?: string;
           body?: string;
+          link_url?: string | null;
           pinned?: boolean;
           created_at?: string;
           updated_at?: string;

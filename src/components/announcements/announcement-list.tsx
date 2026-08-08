@@ -14,11 +14,20 @@ function formatDate(value: string) {
   }
 }
 
+function linkLabel(url: string) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return `Open ${host}`;
+  } catch {
+    return "Open link";
+  }
+}
+
 export function AnnouncementList({ announcements }: AnnouncementListProps) {
   if (announcements.length === 0) {
     return (
       <p className="text-sm font-normal text-off-white/60">
-        No announcements yet.
+        No updates yet. Check back soon.
       </p>
     );
   }
@@ -46,6 +55,16 @@ export function AnnouncementList({ announcements }: AnnouncementListProps) {
           <p className="text-sm font-normal whitespace-pre-wrap text-off-white/70">
             {announcement.body}
           </p>
+          {announcement.link_url ? (
+            <a
+              href={announcement.link_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 w-fit text-sm font-normal text-off-white underline underline-offset-4 hover:text-off-white/80"
+            >
+              {linkLabel(announcement.link_url)}
+            </a>
+          ) : null}
         </div>
       ))}
     </div>

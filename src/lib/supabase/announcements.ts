@@ -33,6 +33,7 @@ export async function getAnnouncements(
 export interface AnnouncementInput {
   title: string;
   body: string;
+  link_url: string | null;
   pinned: boolean;
 }
 
