@@ -6,6 +6,7 @@ import {
   addPayment,
   type PaymentFormState,
 } from "@/app/(app)/payments/actions";
+import { FormNotice } from "@/components/ui/form-notice";
 import { paymentSchema } from "@/lib/validations/payment";
 import type { Profile } from "@/types/database";
 
@@ -36,10 +37,6 @@ function initialValues(profiles: Profile[]): FormValues {
     notes: "",
   };
 }
-
-const inputClass =
-  "border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white";
-const labelClass = "text-sm font-normal text-off-white/80";
 
 export function PaymentForm({ profiles }: PaymentFormProps) {
   const [state, formAction, isPending] = useActionState(
@@ -87,90 +84,40 @@ export function PaymentForm({ profiles }: PaymentFormProps) {
   }
 
   if (profiles.length === 0) {
-    return (
-      <p className="text-sm font-normal text-off-white/60">
-        No members yet.
-      </p>
-    );
+    return <p className="wr-hint">No members yet.</p>;
   }
 
   return (
     <form
       action={formAction}
       onSubmit={(event) => {
-        if (!validate(values)) {
-          event.preventDefault();
-        }
+        if (!validate(values)) event.preventDefault();
       }}
       noValidate
-      className="flex w-full flex-col gap-5"
+      className="flex w-full flex-col gap-4"
     >
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="profileId" className={labelClass}>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="profileId" className="wr-label">
             Member
           </label>
           <select
             id="profileId"
             name="profileId"
             value={values.profileId}
-            onChange={(event) =>
-              updateField("profileId", event.target.value)
-            }
-            className={`${inputClass} bg-charcoal`}
+            onChange={(event) => updateField("profileId", event.target.value)}
+            className="wr-input bg-surface"
           >
             {profiles.map((profile) => (
-              <option
-                key={profile.id}
-                value={profile.id}
-                className="bg-charcoal"
-              >
+              <option key={profile.id} value={profile.id} className="bg-charcoal">
                 {profile.name}
               </option>
             ))}
           </select>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="category" className={labelClass}>
-            Category
-          </label>
-          <input
-            id="category"
-            name="category"
-            type="text"
-            placeholder="Lodging, transportation, food..."
-            value={values.category}
-            onChange={(event) => updateField("category", event.target.value)}
-            className={inputClass}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label htmlFor="description" className={labelClass}>
-          Description
-        </label>
-        <input
-          id="description"
-          name="description"
-          type="text"
-          value={values.description}
-          onChange={(event) =>
-            updateField("description", event.target.value)
-          }
-          className={inputClass}
-        />
-        {fieldErrors.description ? (
-          <p className="text-sm text-off-white/70">
-            {fieldErrors.description}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="amount" className={labelClass}>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="amount" className="wr-label">
             Amount ($)
           </label>
           <input
@@ -180,18 +127,55 @@ export function PaymentForm({ profiles }: PaymentFormProps) {
             min="0.01"
             step="0.01"
             inputMode="decimal"
+            placeholder="0"
             value={values.amount}
             onChange={(event) => updateField("amount", event.target.value)}
-            className={inputClass}
+            className="wr-input"
           />
           {fieldErrors.amount ? (
             <p className="text-sm text-off-white/70">{fieldErrors.amount}</p>
           ) : null}
         </div>
+      </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="dueDate" className={labelClass}>
-            Due date
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="description" className="wr-label">
+          What for
+        </label>
+        <input
+          id="description"
+          name="description"
+          type="text"
+          placeholder="Cabin deposit, food run..."
+          value={values.description}
+          onChange={(event) => updateField("description", event.target.value)}
+          className="wr-input"
+        />
+        {fieldErrors.description ? (
+          <p className="text-sm text-off-white/70">{fieldErrors.description}</p>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="category" className="wr-label">
+            Category{" "}
+            <span className="font-normal text-warm-gray">optional</span>
+          </label>
+          <input
+            id="category"
+            name="category"
+            type="text"
+            placeholder="Lodging, food..."
+            value={values.category}
+            onChange={(event) => updateField("category", event.target.value)}
+            className="wr-input"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="dueDate" className="wr-label">
+            Due date{" "}
+            <span className="font-normal text-warm-gray">optional</span>
           </label>
           <input
             id="dueDate"
@@ -199,36 +183,35 @@ export function PaymentForm({ profiles }: PaymentFormProps) {
             type="date"
             value={values.dueDate}
             onChange={(event) => updateField("dueDate", event.target.value)}
-            className={inputClass}
+            className="wr-input"
           />
-          {fieldErrors.dueDate ? (
-            <p className="text-sm text-off-white/70">{fieldErrors.dueDate}</p>
-          ) : null}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label htmlFor="notes" className={labelClass}>
-          Notes
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="notes" className="wr-label">
+          Notes <span className="font-normal text-warm-gray">optional</span>
         </label>
         <textarea
           id="notes"
           name="notes"
           rows={2}
+          placeholder="Venmo handle, cash, etc."
           value={values.notes}
           onChange={(event) => updateField("notes", event.target.value)}
-          className={`${inputClass} resize-none`}
+          className="wr-input resize-none"
         />
       </div>
 
-      {state.error ? (
-        <p className="text-sm text-off-white/90">{state.error}</p>
+      {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
+      {state.success ? (
+        <FormNotice tone="success">Charge added to the ledger.</FormNotice>
       ) : null}
 
       <button
         type="submit"
         disabled={isPending}
-        className="mt-2 w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal transition-opacity disabled:opacity-50"
+        className="wr-btn-primary w-full sm:w-fit"
       >
         {isPending ? "Adding..." : "Add charge"}
       </button>

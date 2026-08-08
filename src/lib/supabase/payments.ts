@@ -58,8 +58,8 @@ export async function createPayment(
 
 /**
  * Updates a payment's status, stamping paid_at when marked paid. Relies on
- * the "payments_update_admin_only" RLS policy - members can view their own
- * charges but only an admin can confirm payment was received.
+ * the "payments_update_admin_only" RLS policy — admin and co-admin via
+ * public.is_admin().
  */
 export async function updatePaymentStatus(
   supabase: SupabaseClient<Database>,
@@ -73,6 +73,25 @@ export async function updatePaymentStatus(
 
   if (error) {
     console.error("updatePaymentStatus failed", error);
+    return false;
+  }
+
+  return true;
+}
+
+/** Update the dollar amount on a charge (staff ledger). */
+export async function updatePaymentAmount(
+  supabase: SupabaseClient<Database>,
+  id: string,
+  amount: number
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("payments")
+    .update({ amount })
+    .eq("id", id);
+
+  if (error) {
+    console.error("updatePaymentAmount failed", error);
     return false;
   }
 

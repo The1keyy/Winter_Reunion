@@ -124,11 +124,14 @@ export default async function HomePage() {
         <div className="wr-panel wr-fade-up-delay-1 flex flex-col gap-3">
           <span className="wr-section-label">Admin lane</span>
           <p className="text-sm text-off-white/70">
-            Run posts, members, and trip setup from one spot.
+            Run posts, the payment ledger, and trip setup from one spot.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/admin" className="wr-btn-primary">
               Open dashboard
+            </Link>
+            <Link href="/payments" className="wr-btn">
+              Ledger
             </Link>
             <Link href="/admin/announcements" className="wr-btn">
               Quick post

@@ -1,25 +1,32 @@
 import { format } from "date-fns";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import {
-  deletePayment,
-  setPaymentStatus,
-} from "@/app/(app)/payments/actions";
+import { PaymentChargeRow } from "@/components/admin/payment-charge-row";
 import { PaymentForm } from "@/components/admin/payment-form";
+import { AddOptionBox } from "@/components/guidance/add-option-box";
+import { Avatar } from "@/components/ui/avatar";
 import { getPayments } from "@/lib/supabase/payments";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
-import type { PaymentStatus } from "@/types/database";
-
-const STATUS_OPTIONS: PaymentStatus[] = ["unpaid", "pending", "paid", "refunded"];
+import type { Payment } from "@/types/database";
 
 function formatDate(value: string | null) {
   if (!value) return null;
   try {
-    return format(new Date(`${value}T00:00:00`), "MMM d, yyyy");
+    return format(new Date(`${value}T00:00:00`), "MMM d");
   } catch {
     return value;
   }
+}
+
+interface MemberLedger {
+  profileId: string;
+  name: string;
+  charges: Payment[];
+  owed: number;
+  paid: number;
+  openCount: number;
 }
 
 export default async function PaymentsPage() {
@@ -28,129 +35,202 @@ export default async function PaymentsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
   const profile = await getProfile(supabase, user.id);
-  const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
+  const isStaff = profile?.role === "admin" || profile?.role === "co-admin";
 
-  // Money stays out of the member app — Key collects outside (Venmo, etc.).
-  if (!isAdmin) {
-    redirect("/home");
-  }
+  // Members never pay here — staff ledger only (admin + co-admin).
+  if (!isStaff) redirect("/home");
 
   const [payments, profiles] = await Promise.all([
     getPayments(supabase),
     getAllProfiles(supabase),
   ]);
 
-  const profileNameById = new Map(profiles.map((p) => [p.id, p.name]));
+  const nameById = new Map(profiles.map((p) => [p.id, p.name]));
+
+  const byMember = new Map<string, MemberLedger>();
+  for (const payment of payments) {
+    const existing = byMember.get(payment.profile_id);
+    const name = nameById.get(payment.profile_id) ?? "Member";
+    const row =
+      existing ??
+      ({
+        profileId: payment.profile_id,
+        name,
+        charges: [],
+        owed: 0,
+        paid: 0,
+        openCount: 0,
+      } satisfies MemberLedger);
+
+    row.charges.push(payment);
+    if (payment.status === "paid") {
+      row.paid += payment.amount;
+    } else if (payment.status !== "refunded") {
+      row.owed += payment.amount;
+      row.openCount += 1;
+    }
+    byMember.set(payment.profile_id, row);
+  }
+
+  const members = Array.from(byMember.values()).sort((a, b) => {
+    if (a.openCount !== b.openCount) return b.openCount - a.openCount;
+    if (a.owed !== b.owed) return b.owed - a.owed;
+    return a.name.localeCompare(b.name);
+  });
+
+  const totalCharged = payments
+    .filter((p) => p.status !== "refunded")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalCollected = payments
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + p.amount, 0);
+  const totalOwed = totalCharged - totalCollected;
+  const openCount = payments.filter(
+    (p) => p.status === "unpaid" || p.status === "pending"
+  ).length;
 
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-light text-off-white md:text-3xl">
-          Payments
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <header className="wr-fade-up flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="wr-section-label">Staff only</span>
+          <Link
+            href="/admin"
+            className="text-sm font-medium text-ice underline-offset-4 hover:text-off-white hover:underline"
+          >
+            ← Dashboard
+          </Link>
+        </div>
+        <h1 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
+          Payment ledger
         </h1>
-        <p className="text-sm font-normal text-off-white/70">
-          Admin ledger only — track who&apos;s paid. Members never see this or
-          pay in the app.
+        <p className="max-w-xl text-sm text-off-white/70">
+          Admins and co-admins track who paid outside the app (Venmo, cash,
+          etc.). Tap an amount to edit it. Tap Mark paid when money lands.
+          Members never see this page.
         </p>
-      </div>
+      </header>
 
-      <div className="flex flex-col gap-4 border-b border-warm-gray/20 pb-8">
-        <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-          Add a charge
-        </span>
-        <PaymentForm profiles={profiles} />
-      </div>
+      <section className="wr-fade-up grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Still owed" value={`$${totalOwed.toLocaleString()}`} accent />
+        <Stat label="Collected" value={`$${totalCollected.toLocaleString()}`} />
+        <Stat label="Charged" value={`$${totalCharged.toLocaleString()}`} />
+        <Stat
+          label="Open"
+          value={String(openCount)}
+          hint={openCount === 1 ? "charge" : "charges"}
+        />
+      </section>
 
-      <div className="flex flex-col gap-4">
-        {payments.length === 0 ? (
-          <p className="text-sm font-normal text-off-white/60">
-            No charges yet.
+      <AddOptionBox label="Add a charge">
+        {() => <PaymentForm profiles={profiles} />}
+      </AddOptionBox>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex items-end justify-between gap-3">
+          <span className="wr-section-label">By member</span>
+          <span className="text-xs font-semibold text-ember tabular-nums">
+            {members.length}
+          </span>
+        </div>
+
+        {members.length === 0 ? (
+          <p className="wr-hint">
+            No charges yet. Add one above — then mark paid when they send it.
           </p>
         ) : (
-          payments.map((payment) => {
-            const dueLabel = formatDate(payment.due_date);
-            const memberName = profileNameById.get(payment.profile_id);
-
-            return (
-              <div
-                key={payment.id}
-                className="flex flex-col gap-2 border border-warm-gray/20 p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-normal text-off-white">
-                        {payment.description}
+          <div className="flex flex-col gap-4">
+            {members.map((member) => (
+              <article key={member.profileId} className="wr-panel flex flex-col gap-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={member.name} size="md" />
+                    <div className="min-w-0">
+                      <h2 className="truncate font-heading text-lg font-semibold text-off-white">
+                        {member.name}
                       </h2>
-                      {payment.category ? (
-                        <span className="border border-warm-gray/50 px-1.5 py-0.5 text-xs text-off-white/70">
-                          {payment.category}
-                        </span>
-                      ) : null}
-                      <span
-                        className={
-                          "border px-1.5 py-0.5 text-xs " +
-                          (payment.status === "paid"
-                            ? "border-winter-green text-winter-green"
-                            : payment.status === "refunded"
-                              ? "border-warm-gray/50 text-off-white/40"
-                              : "border-warm-gray/50 text-off-white/70")
-                        }
-                      >
-                        {payment.status}
-                      </span>
-                    </div>
-                    <p className="text-sm font-normal text-off-white/60">
-                      {[memberName, dueLabel ? `Due ${dueLabel}` : null]
-                        .filter(Boolean)
-                        .join(" \u00b7 ")}
-                    </p>
-                    {payment.notes ? (
-                      <p className="text-sm font-normal whitespace-pre-wrap text-off-white/70">
-                        {payment.notes}
+                      <p className="text-xs text-warm-gray">
+                        {member.openCount > 0
+                          ? `${member.openCount} open`
+                          : "All clear"}
+                        {member.paid > 0
+                          ? ` · $${member.paid.toLocaleString()} paid`
+                          : ""}
                       </p>
-                    ) : null}
+                    </div>
                   </div>
-                  <span className="text-lg font-light text-off-white">
-                    ${payment.amount.toLocaleString()}
-                  </span>
+                  <div className="shrink-0 text-right">
+                    {member.owed > 0 ? (
+                      <>
+                        <p className="font-heading text-2xl font-semibold text-ember tabular-nums">
+                          ${member.owed.toLocaleString()}
+                        </p>
+                        <p className="text-[11px] font-semibold tracking-wide text-warm-gray uppercase">
+                          still owes
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-heading text-2xl font-semibold text-winter-green tabular-nums">
+                          $0
+                        </p>
+                        <p className="text-[11px] font-semibold tracking-wide text-winter-green uppercase">
+                          paid up
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 border-t border-warm-gray/20 pt-3">
-                  {STATUS_OPTIONS.filter(
-                    (status) => status !== payment.status
-                  ).map((status) => (
-                    <form
-                      key={status}
-                      action={setPaymentStatus.bind(null, payment.id, status)}
-                    >
-                      <button
-                        type="submit"
-                        className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-                      >
-                        Mark {status}
-                      </button>
-                    </form>
+                <ul className="flex flex-col gap-2">
+                  {member.charges.map((payment) => (
+                    <PaymentChargeRow
+                      key={payment.id}
+                      payment={payment}
+                      dueLabel={formatDate(payment.due_date)}
+                    />
                   ))}
-                  <form action={deletePayment.bind(null, payment.id)}>
-                    <button
-                      type="submit"
-                      className="text-sm font-normal text-off-white/50 hover:text-off-white"
-                    >
-                      Delete
-                    </button>
-                  </form>
-                </div>
-              </div>
-            );
-          })
+                </ul>
+              </article>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  hint,
+  accent,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      className={
+        "wr-panel flex flex-col gap-1 !p-3 " +
+        (accent ? "border-ember/40" : "")
+      }
+    >
+      <span className="wr-section-label">{label}</span>
+      <span
+        className={
+          "font-heading text-xl font-semibold tabular-nums " +
+          (accent ? "text-ember" : "text-off-white")
+        }
+      >
+        {value}
+      </span>
+      {hint ? <span className="text-xs text-warm-gray">{hint}</span> : null}
     </div>
   );
 }

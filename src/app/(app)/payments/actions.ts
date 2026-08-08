@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import {
   createPayment,
   deletePaymentById,
+  updatePaymentAmount,
   updatePaymentStatus,
 } from "@/lib/supabase/payments";
 import { getProfile } from "@/lib/supabase/profiles";
@@ -18,30 +19,36 @@ export interface PaymentFormState {
   postedAt?: number;
 }
 
-async function requireAdmin() {
+/** Admin + co-admin (same as public.is_admin()). */
+async function requireStaff() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { supabase, user: null, isAdmin: false };
+    return { supabase, user: null, isStaff: false };
   }
 
   const profile = await getProfile(supabase, user.id);
-  const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
+  const isStaff = profile?.role === "admin" || profile?.role === "co-admin";
 
-  return { supabase, user, isAdmin };
+  return { supabase, user, isStaff };
+}
+
+function revalidateLedger() {
+  revalidatePath("/payments");
+  revalidatePath("/admin");
 }
 
 export async function addPayment(
   _prevState: PaymentFormState,
   formData: FormData
 ): Promise<PaymentFormState> {
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isStaff } = await requireStaff();
 
-  if (!isAdmin) {
-    return { error: "Only trip admins can add charges." };
+  if (!isStaff) {
+    return { error: "Only admins and co-admins can add charges." };
   }
 
   const parsed = paymentSchema.safeParse({
@@ -70,7 +77,7 @@ export async function addPayment(
     return { error: "Could not add the charge. Please try again." };
   }
 
-  revalidatePath("/payments");
+  revalidateLedger();
 
   return { success: true, postedAt: Date.now() };
 }
@@ -81,11 +88,36 @@ export async function setPaymentStatus(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
-  if (!isAdmin) return;
+  const { supabase, isStaff } = await requireStaff();
+  if (!isStaff) return;
 
   await updatePaymentStatus(supabase, id, status);
-  revalidatePath("/payments");
+  revalidateLedger();
+}
+
+export async function updateChargeAmount(
+  id: string,
+  _prevState: PaymentFormState,
+  formData: FormData
+): Promise<PaymentFormState> {
+  const { supabase, isStaff } = await requireStaff();
+  if (!isStaff) {
+    return { error: "Only admins and co-admins can edit amounts." };
+  }
+
+  const raw = String(formData.get("amount") ?? "").trim();
+  const amount = Number(raw);
+  if (!raw || Number.isNaN(amount) || amount <= 0) {
+    return { error: "Enter an amount greater than 0." };
+  }
+
+  const ok = await updatePaymentAmount(supabase, id, amount);
+  if (!ok) {
+    return { error: "Could not update amount. Try again." };
+  }
+
+  revalidateLedger();
+  return { success: true, postedAt: Date.now() };
 }
 
 export async function deletePayment(
@@ -93,9 +125,9 @@ export async function deletePayment(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
-  if (!isAdmin) return;
+  const { supabase, isStaff } = await requireStaff();
+  if (!isStaff) return;
 
   await deletePaymentById(supabase, id);
-  revalidatePath("/payments");
+  revalidateLedger();
 }

@@ -62,17 +62,30 @@ export function NavBar() {
               );
             })}
             {isStaff ? (
-              <Link
-                href="/admin"
-                className={
-                  "px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition-colors " +
-                  (pathname.startsWith("/admin")
-                    ? "text-ember"
-                    : "text-warm-gray hover:text-off-white")
-                }
-              >
-                Admin
-              </Link>
+              <>
+                <Link
+                  href="/payments"
+                  className={
+                    "px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition-colors " +
+                    (pathname.startsWith("/payments")
+                      ? "text-ember"
+                      : "text-warm-gray hover:text-off-white")
+                  }
+                >
+                  Ledger
+                </Link>
+                <Link
+                  href="/admin"
+                  className={
+                    "px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition-colors " +
+                    (pathname.startsWith("/admin")
+                      ? "text-ember"
+                      : "text-warm-gray hover:text-off-white")
+                  }
+                >
+                  Admin
+                </Link>
+              </>
             ) : null}
           </nav>
         </div>
