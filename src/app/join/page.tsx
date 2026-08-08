@@ -11,8 +11,8 @@ export default function JoinPage() {
             Winter Reunion 2027
           </h1>
           <p className="text-sm font-normal text-off-white/70">
-            Fill this out to create your account. You&apos;ll need the trip
-            passcode from Key to finish signing up.
+            Quick setup: first name, last initial, email, a password you pick,
+            and the trip passcode from Key.
           </p>
         </div>
 

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { joinSchema } from "@/lib/validations/join";
+import { formatJoinDisplayName, joinSchema } from "@/lib/validations/join";
 
 export interface JoinState {
   error?: string;
@@ -15,7 +15,8 @@ export async function join(
   formData: FormData
 ): Promise<JoinState> {
   const parsed = joinSchema.safeParse({
-    name: formData.get("name"),
+    firstName: formData.get("firstName"),
+    lastInitial: formData.get("lastInitial"),
     email: formData.get("email"),
     password: formData.get("password"),
     passcode: formData.get("passcode"),
@@ -25,19 +26,20 @@ export async function join(
     return { error: "Check that all fields are filled in correctly." };
   }
 
-  const { name, email, password, passcode } = parsed.data;
+  const { firstName, lastInitial, email, password, passcode } = parsed.data;
 
   if (passcode !== process.env.TRIP_JOIN_PASSCODE) {
     return { error: "Invalid passcode." };
   }
 
+  const displayName = formatJoinDisplayName(firstName, lastInitial);
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: name },
+      data: { full_name: displayName },
     },
   });
 

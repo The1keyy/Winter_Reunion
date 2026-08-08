@@ -621,6 +621,57 @@ export interface Database {
         };
         Relationships: [];
       };
+      talk_posts: {
+        Row: {
+          id: string;
+          author_id: string | null;
+          title: string;
+          body: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          author_id?: string | null;
+          title: string;
+          body: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          author_id?: string | null;
+          title?: string;
+          body?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      talk_replies: {
+        Row: {
+          id: string;
+          post_id: string;
+          author_id: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          post_id: string;
+          author_id?: string | null;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          post_id?: string;
+          author_id?: string | null;
+          body?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       activity_log: {
         Row: {
           id: string;
@@ -684,5 +735,7 @@ export type PollOption = Tables<"poll_options">;
 export type Cabin = Tables<"cabins">;
 export type Activity = Tables<"activities">;
 export type Payment = Tables<"payments">;
+export type TalkPost = Tables<"talk_posts">;
+export type TalkReply = Tables<"talk_replies">;
 export type ItineraryItem = Tables<"itinerary_items">;
 export type Vehicle = Tables<"vehicles">;

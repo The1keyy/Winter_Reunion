@@ -24,6 +24,20 @@ export async function getRegistration(
   return data;
 }
 
+/** Fetches every registration (admins see all via RLS). */
+export async function getAllRegistrations(
+  supabase: SupabaseClient<Database>
+): Promise<Registration[]> {
+  const { data, error } = await supabase.from("registrations").select("*");
+
+  if (error) {
+    console.error("getAllRegistrations failed", error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
 export interface RegistrationInput {
   attending: boolean;
   guests_count: number;

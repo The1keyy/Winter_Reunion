@@ -30,7 +30,10 @@ https://your-deployed-domain.com/join
 
 ## Database migrations
 
-After pulling schema changes, run new SQL files in `supabase/migrations/` in the Supabase SQL editor (in filename order) if they aren't applied yet. Example: `20260808000002_announcement_link_url.sql` adds optional links on announcements.
+After pulling schema changes, run new SQL files in `supabase/migrations/` in the Supabase SQL editor (in filename order) if they aren't applied yet:
+
+- `20260808000002_announcement_link_url.sql` — optional links on announcements
+- `20260808000003_talk_posts.sql` — Talk board (posts + replies)
 
 ## Resetting a member's password
 

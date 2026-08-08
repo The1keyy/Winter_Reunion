@@ -5,6 +5,7 @@ import type {
   Payment,
   Poll,
   Registration,
+  TalkPost,
 } from "@/types/database";
 
 export interface HomeUpdateItem {
@@ -12,7 +13,7 @@ export interface HomeUpdateItem {
   scope: "personal" | "group";
   headline: string;
   detail: string;
-  /** Internal path, external URL, or null when the card is informational only. */
+  /** Internal path, external URL, or null when informational only. */
   href: string | null;
   cta: string;
 }
@@ -24,12 +25,11 @@ interface BuildHomeUpdatesInput {
   polls: Poll[];
   cabins: Cabin[];
   activities: Activity[];
+  talkPosts: TalkPost[];
 }
 
 /**
- * Builds a short, scannable "what's new" list split into personal (only this
- * member) vs group (everyone). Keeps copy action-oriented so people know the
- * next click without reading a long feed.
+ * Builds compact notification chips: personal (this member only) vs group.
  */
 export function buildHomeUpdates({
   registration,
@@ -38,6 +38,7 @@ export function buildHomeUpdates({
   polls,
   cabins,
   activities,
+  talkPosts,
 }: BuildHomeUpdatesInput): {
   personal: HomeUpdateItem[];
   group: HomeUpdateItem[];
@@ -49,10 +50,10 @@ export function buildHomeUpdates({
     personal.push({
       id: "rsvp-missing",
       scope: "personal",
-      headline: "Your RSVP is still open",
-      detail: "Takes under a minute. Yes or no is enough to get started.",
+      headline: "RSVP still open",
+      detail: "Takes under a minute.",
       href: "/rsvp",
-      cta: "RSVP now",
+      cta: "Go",
     });
   }
 
@@ -71,13 +72,13 @@ export function buildHomeUpdates({
       headline:
         outstanding.length === 1
           ? `You owe $${outstandingTotal.toLocaleString()}`
-          : `You have ${outstanding.length} open charges ($${outstandingTotal.toLocaleString()})`,
+          : `${outstanding.length} charges · $${outstandingTotal.toLocaleString()}`,
       detail:
         outstanding.length === 1
           ? outstanding[0].description
-          : "Only you see your balance. Open Payments for the breakdown.",
+          : "Only you see your balance.",
       href: "/payments",
-      cta: "View my payments",
+      cta: "Pay",
     });
   }
 
@@ -86,11 +87,9 @@ export function buildHomeUpdates({
       id: `announcement-${announcement.id}`,
       scope: "group",
       headline: announcement.title,
-      detail: announcement.link_url
-        ? `${trimDetail(announcement.body)} · Includes a link`
-        : trimDetail(announcement.body),
+      detail: trimDetail(announcement.body),
       href: announcement.link_url,
-      cta: announcement.link_url ? "Open link" : "Posted for the group",
+      cta: announcement.link_url ? "Link" : "",
     });
   }
 
@@ -101,9 +100,9 @@ export function buildHomeUpdates({
       scope: "group",
       headline:
         openPolls.length === 1
-          ? `Poll open: ${openPolls[0].question}`
-          : `${openPolls.length} polls need a vote`,
-      detail: "Group decision — your vote counts once.",
+          ? `Poll: ${openPolls[0].question}`
+          : `${openPolls.length} open polls`,
+      detail: "Your vote counts once.",
       href: "/polls",
       cta: "Vote",
     });
@@ -116,11 +115,11 @@ export function buildHomeUpdates({
       scope: "group",
       headline:
         votingCabins.length === 1
-          ? `Cabin vote open: ${votingCabins[0].name}`
-          : `${votingCabins.length} cabins are up for a vote`,
-      detail: "Everyone helps pick where we stay.",
+          ? `Cabin vote: ${votingCabins[0].name}`
+          : `${votingCabins.length} cabin votes`,
+      detail: "Help pick where we stay.",
       href: "/cabins",
-      cta: "Vote on cabins",
+      cta: "Vote",
     });
   }
 
@@ -135,17 +134,31 @@ export function buildHomeUpdates({
       headline:
         liveActivities.length === 1
           ? `Activity: ${liveActivities[0].name}`
-          : `${liveActivities.length} activities to respond to`,
-      detail: "Say yes / no / maybe so the group can plan.",
+          : `${liveActivities.length} activities`,
+      detail: "Yes / no / maybe.",
       href: "/activities",
-      cta: "Respond",
+      cta: "Go",
+    });
+  }
+
+  if (talkPosts.length > 0) {
+    group.push({
+      id: "talk-recent",
+      scope: "group",
+      headline:
+        talkPosts.length === 1
+          ? `Talk: ${talkPosts[0].title}`
+          : `${talkPosts.length} new Talk threads`,
+      detail: "Important stuff outside the usual forms.",
+      href: "/talk",
+      cta: "Open",
     });
   }
 
   return { personal, group };
 }
 
-function trimDetail(text: string, max = 110) {
+function trimDetail(text: string, max = 90) {
   const compact = text.replace(/\s+/g, " ").trim();
   if (compact.length <= max) return compact;
   return `${compact.slice(0, max - 1)}…`;

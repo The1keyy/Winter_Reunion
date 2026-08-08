@@ -12,6 +12,7 @@ import { getPolls } from "@/lib/supabase/polls";
 import { getProfile } from "@/lib/supabase/profiles";
 import { getRegistration } from "@/lib/supabase/registrations";
 import { createClient } from "@/lib/supabase/server";
+import { getTalkPosts } from "@/lib/supabase/talk";
 import { getTripSettings } from "@/lib/supabase/trip-settings";
 import { buildHomeUpdates } from "@/lib/updates/build-home-updates";
 
@@ -30,6 +31,7 @@ export default async function HomePage() {
     polls,
     cabins,
     activities,
+    talkPosts,
   ] = await Promise.all([
     user ? getProfile(supabase, user.id) : Promise.resolve(null),
     getTripSettings(supabase),
@@ -39,10 +41,10 @@ export default async function HomePage() {
     getPolls(supabase),
     getCabins(supabase),
     getActivities(supabase),
+    getTalkPosts(supabase, 3),
   ]);
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
-  const isPrimaryAdmin = profile?.role === "admin";
   const needsPhone = Boolean(user && profile && !profile.phone);
 
   const { personal, group } = buildHomeUpdates({
@@ -52,6 +54,7 @@ export default async function HomePage() {
     polls,
     cabins,
     activities,
+    talkPosts,
   });
 
   const rsvpStatus = !registration
@@ -62,6 +65,7 @@ export default async function HomePage() {
 
   const quickLinks = [
     { href: "/rsvp", label: registration ? "Update RSVP" : "RSVP now" },
+    { href: "/talk", label: "Talk" },
     { href: "/cabins", label: "Cabins" },
     { href: "/activities", label: "Activities" },
     { href: "/suggestions", label: "Suggestions" },
@@ -86,54 +90,33 @@ export default async function HomePage() {
   const adminShortcuts = canSetUpTrip ? (
     <div className="flex flex-col gap-2 border border-warm-gray/20 p-4">
       <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-        Admin shortcuts
+        Admin
       </span>
       <p className="text-sm font-normal text-off-white/60">
-        One place to keep the group moving — post first, then tweak details.
+        Run payments, posts, and trip setup from one dashboard.
       </p>
       <div className="mt-1 flex flex-wrap gap-3">
         <Link
-          href="/admin/announcements"
+          href="/admin"
           className="w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal"
         >
-          Post an update
+          Open dashboard
         </Link>
         <Link
-          href="/admin/trip-settings"
+          href="/admin/announcements"
           className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white hover:border-off-white"
         >
-          Trip details
+          Quick post
         </Link>
-        {isPrimaryAdmin ? (
-          <Link
-            href="/admin/members"
-            className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white hover:border-off-white"
-          >
-            Members
-          </Link>
-        ) : null}
+        <Link
+          href="/payments"
+          className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white hover:border-off-white"
+        >
+          Payments
+        </Link>
       </div>
     </div>
   ) : null;
-
-  const announcementsSection = (
-    <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-          Latest announcements
-        </span>
-        {canSetUpTrip ? (
-          <Link
-            href="/admin/announcements"
-            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-          >
-            Post / manage
-          </Link>
-        ) : null}
-      </div>
-      <AnnouncementList announcements={announcements} />
-    </div>
-  );
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -143,10 +126,10 @@ export default async function HomePage() {
         </h1>
         <p className="text-sm font-normal text-off-white/70">
           {trip
-            ? "Scan what's new below, then jump into whatever needs you."
+            ? "Check small notifications below, then jump into what needs you."
             : canSetUpTrip
-              ? "Trip details aren't set yet — start there, then post your first update."
-              : "Trip details aren't set yet. Check back soon, or finish your RSVP while you wait."}
+              ? "Open the dashboard to set trip details and post your first update."
+              : "Trip details aren't set yet. Finish your RSVP while you wait."}
         </p>
       </div>
 
@@ -160,8 +143,28 @@ export default async function HomePage() {
         {quickLinksRow}
       </div>
 
-      <HomeUpdates personal={personal} group={group} />
-      {announcementsSection}
+      <HomeUpdates
+        personal={personal}
+        group={group}
+        hasPhone={Boolean(profile?.phone)}
+      />
+
+      <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
+            Latest announcements
+          </span>
+          {canSetUpTrip ? (
+            <Link
+              href="/admin/announcements"
+              className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+            >
+              Post / manage
+            </Link>
+          ) : null}
+        </div>
+        <AnnouncementList announcements={announcements} />
+      </div>
     </div>
   );
 }

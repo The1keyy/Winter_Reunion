@@ -7,35 +7,35 @@ import { PasswordField } from "@/components/auth/password-field";
 import { FormNotice } from "@/components/ui/form-notice";
 import { joinSchema } from "@/lib/validations/join";
 
-interface FieldErrors {
-  name?: string;
-  email?: string;
-  password?: string;
-  passcode?: string;
+interface FormValues {
+  firstName: string;
+  lastInitial: string;
+  email: string;
+  password: string;
+  passcode: string;
 }
 
+type FieldErrors = Partial<Record<keyof FormValues, string>>;
+
 const initialState: JoinState = {};
+const initialValues: FormValues = {
+  firstName: "",
+  lastInitial: "",
+  email: "",
+  password: "",
+  passcode: "",
+};
+
+const inputClass =
+  "border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white";
 
 export function JoinForm() {
   const [state, formAction, isPending] = useActionState(join, initialState);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passcode, setPasscode] = useState("");
+  const [values, setValues] = useState<FormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  function validate(
-    nextName: string,
-    nextEmail: string,
-    nextPassword: string,
-    nextPasscode: string
-  ) {
-    const result = joinSchema.safeParse({
-      name: nextName,
-      email: nextEmail,
-      password: nextPassword,
-      passcode: nextPasscode,
-    });
+  function validate(next: FormValues) {
+    const result = joinSchema.safeParse(next);
 
     if (result.success) {
       setFieldErrors({});
@@ -45,56 +45,88 @@ export function JoinForm() {
     const errors: FieldErrors = {};
     for (const issue of result.error.issues) {
       const key = issue.path[0];
-      if (
-        key === "name" ||
-        key === "email" ||
-        key === "password" ||
-        key === "passcode"
-      ) {
-        errors[key] = issue.message;
+      if (typeof key === "string") {
+        errors[key as keyof FormValues] = issue.message;
       }
     }
     setFieldErrors(errors);
     return false;
   }
 
+  function updateField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
+    const next = { ...values, [key]: value };
+    setValues(next);
+    if (fieldErrors[key]) validate(next);
+  }
+
+  const previewName =
+    values.firstName.trim() && values.lastInitial.trim()
+      ? `${values.firstName.trim()} ${values.lastInitial.trim().toUpperCase()}.`
+      : null;
+
   return (
     <form
       action={formAction}
       onSubmit={(event) => {
-        if (!validate(name, email, password, passcode)) {
-          event.preventDefault();
-        }
+        if (!validate(values)) event.preventDefault();
       }}
       noValidate
       className="flex w-full flex-col gap-5"
     >
-      <div className="flex flex-col gap-2">
-        <label htmlFor="name" className="text-sm font-normal text-off-white/80">
-          Name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          autoComplete="name"
-          placeholder="Your full name"
-          value={name}
-          onChange={(event) => {
-            setName(event.target.value);
-            if (fieldErrors.name)
-              validate(event.target.value, email, password, passcode);
-          }}
-          className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
-        />
-        {fieldErrors.name ? (
-          <p className="text-sm text-off-white/70">{fieldErrors.name}</p>
-        ) : (
-          <p className="text-sm font-normal text-off-white/50">
-            This is how other trip members will see you.
-          </p>
-        )}
+      <div className="grid grid-cols-[1fr_4.5rem] gap-3">
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="firstName"
+            className="text-sm font-normal text-off-white/80"
+          >
+            First name
+          </label>
+          <input
+            id="firstName"
+            name="firstName"
+            type="text"
+            autoComplete="given-name"
+            placeholder="Keyshawn"
+            value={values.firstName}
+            onChange={(event) => updateField("firstName", event.target.value)}
+            className={inputClass}
+          />
+          {fieldErrors.firstName ? (
+            <p className="text-sm text-off-white/70">{fieldErrors.firstName}</p>
+          ) : null}
+        </div>
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="lastInitial"
+            className="text-sm font-normal text-off-white/80"
+          >
+            Last initial
+          </label>
+          <input
+            id="lastInitial"
+            name="lastInitial"
+            type="text"
+            maxLength={1}
+            autoComplete="family-name"
+            placeholder="J"
+            value={values.lastInitial}
+            onChange={(event) =>
+              updateField("lastInitial", event.target.value.slice(0, 1))
+            }
+            className={`${inputClass} text-center uppercase`}
+          />
+          {fieldErrors.lastInitial ? (
+            <p className="text-sm text-off-white/70">
+              {fieldErrors.lastInitial}
+            </p>
+          ) : null}
+        </div>
       </div>
+      <p className="text-sm font-normal text-off-white/50">
+        {previewName
+          ? `You'll show up as ${previewName}`
+          : "First name + last initial only — keeps it light and private."}
+      </p>
 
       <div className="flex flex-col gap-2">
         <label
@@ -109,19 +141,15 @@ export function JoinForm() {
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
-          value={email}
-          onChange={(event) => {
-            setEmail(event.target.value);
-            if (fieldErrors.email)
-              validate(name, event.target.value, password, passcode);
-          }}
-          className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
+          value={values.email}
+          onChange={(event) => updateField("email", event.target.value)}
+          className={inputClass}
         />
         {fieldErrors.email ? (
           <p className="text-sm text-off-white/70">{fieldErrors.email}</p>
         ) : (
           <p className="text-sm font-normal text-off-white/50">
-            You&apos;ll use this to sign in next time.
+            This is how you sign back in later.
           </p>
         )}
       </div>
@@ -129,14 +157,11 @@ export function JoinForm() {
       <PasswordField
         id="password"
         name="password"
-        label="Password"
+        label="Choose a password"
         autoComplete="new-password"
-        value={password}
-        onChange={(value) => {
-          setPassword(value);
-          if (fieldErrors.password) validate(name, email, value, passcode);
-        }}
-        hint="Use at least 6 characters. You'll need this to sign in later."
+        value={values.password}
+        onChange={(value) => updateField("password", value)}
+        hint="Pick anything you'll remember — at least 6 characters. Show it once to double-check."
         error={fieldErrors.password}
       />
 
@@ -152,13 +177,9 @@ export function JoinForm() {
           name="passcode"
           type="text"
           autoComplete="off"
-          value={passcode}
-          onChange={(event) => {
-            setPasscode(event.target.value);
-            if (fieldErrors.passcode)
-              validate(name, email, password, event.target.value);
-          }}
-          className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
+          value={values.passcode}
+          onChange={(event) => updateField("passcode", event.target.value)}
+          className={inputClass}
         />
         {fieldErrors.passcode ? (
           <p className="text-sm text-off-white/70">{fieldErrors.passcode}</p>
@@ -170,7 +191,6 @@ export function JoinForm() {
       </div>
 
       {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
-
       {state.message ? (
         <FormNotice tone="success">{state.message}</FormNotice>
       ) : null}
