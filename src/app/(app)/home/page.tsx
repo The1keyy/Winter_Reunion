@@ -75,6 +75,12 @@ export default async function HomePage() {
             >
               {registration ? "Update RSVP" : "RSVP now"}
             </Link>
+            <Link
+              href="/cabins"
+              className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
+            >
+              View cabins
+            </Link>
           </div>
         </div>
         {announcementsSection}
@@ -98,14 +104,22 @@ export default async function HomePage() {
         ) : null}
       </div>
       <TripOverview trip={trip} />
-      <div className="flex items-center justify-between gap-4 border-t border-warm-gray/20 pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-warm-gray/20 pt-4">
         <p className="text-sm font-normal text-off-white/70">{rsvpStatus}</p>
-        <Link
-          href="/rsvp"
-          className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-        >
-          {registration ? "Update RSVP" : "RSVP now"}
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/rsvp"
+            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+          >
+            {registration ? "Update RSVP" : "RSVP now"}
+          </Link>
+          <Link
+            href="/cabins"
+            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+          >
+            Cabins
+          </Link>
+        </div>
       </div>
       {announcementsSection}
     </div>

@@ -45,6 +45,27 @@ export interface TripSettingsInput {
  * callers should also gate this in the UI, but the database is the real
  * enforcement point.
  */
+/**
+ * Points the trip at a chosen cabin. Assumes the trip_settings row already
+ * exists (created via upsertTripSettings) - a no-op otherwise.
+ */
+export async function setSelectedCabin(
+  supabase: SupabaseClient<Database>,
+  cabinId: string | null
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("trip_settings")
+    .update({ selected_cabin_id: cabinId })
+    .eq("id", 1);
+
+  if (error) {
+    console.error("setSelectedCabin failed", error);
+    return false;
+  }
+
+  return true;
+}
+
 export async function upsertTripSettings(
   supabase: SupabaseClient<Database>,
   input: TripSettingsInput
