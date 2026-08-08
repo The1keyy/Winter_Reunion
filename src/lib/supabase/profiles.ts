@@ -24,6 +24,27 @@ export async function getProfile(
 }
 
 /**
+ * Fetches every profile, ordered by name. Used for admin pickers (e.g.
+ * assigning a payment to a specific member). Visible to everyone via the
+ * "profiles_select_all" RLS policy.
+ */
+export async function getAllProfiles(
+  supabase: SupabaseClient<Database>
+): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("getAllProfiles failed", error);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+/**
  * Creates a profile row with role "member" the first time a user signs in.
  * Safe to call on every sign-in - it's a no-op if the profile already exists.
  * Relies on the "profiles_insert_self_or_admin" RLS policy, which allows a

@@ -1,0 +1,237 @@
+"use client";
+
+import { useActionState, useState } from "react";
+
+import {
+  addPayment,
+  type PaymentFormState,
+} from "@/app/(app)/payments/actions";
+import { paymentSchema } from "@/lib/validations/payment";
+import type { Profile } from "@/types/database";
+
+interface PaymentFormProps {
+  profiles: Profile[];
+}
+
+interface FormValues {
+  profileId: string;
+  description: string;
+  category: string;
+  amount: string;
+  dueDate: string;
+  notes: string;
+}
+
+type FieldErrors = Partial<Record<keyof FormValues, string>>;
+
+const initialState: PaymentFormState = {};
+
+function initialValues(profiles: Profile[]): FormValues {
+  return {
+    profileId: profiles[0]?.id ?? "",
+    description: "",
+    category: "",
+    amount: "",
+    dueDate: "",
+    notes: "",
+  };
+}
+
+const inputClass =
+  "border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white";
+const labelClass = "text-sm font-normal text-off-white/80";
+
+export function PaymentForm({ profiles }: PaymentFormProps) {
+  const [state, formAction, isPending] = useActionState(
+    addPayment,
+    initialState
+  );
+  const [values, setValues] = useState<FormValues>(() =>
+    initialValues(profiles)
+  );
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [lastPostedAt, setLastPostedAt] = useState<number | undefined>();
+
+  if (state.postedAt && state.postedAt !== lastPostedAt) {
+    setLastPostedAt(state.postedAt);
+    setValues({ ...initialValues(profiles), profileId: values.profileId });
+    setFieldErrors({});
+  }
+
+  function validate(nextValues: FormValues) {
+    const result = paymentSchema.safeParse(nextValues);
+
+    if (result.success) {
+      setFieldErrors({});
+      return true;
+    }
+
+    const errors: FieldErrors = {};
+    for (const issue of result.error.issues) {
+      const key = issue.path[0];
+      if (typeof key === "string") {
+        errors[key as keyof FormValues] = issue.message;
+      }
+    }
+    setFieldErrors(errors);
+    return false;
+  }
+
+  function updateField<K extends keyof FormValues>(
+    key: K,
+    value: FormValues[K]
+  ) {
+    const next = { ...values, [key]: value };
+    setValues(next);
+    if (fieldErrors[key]) validate(next);
+  }
+
+  if (profiles.length === 0) {
+    return (
+      <p className="text-sm font-normal text-off-white/60">
+        No members yet.
+      </p>
+    );
+  }
+
+  return (
+    <form
+      action={formAction}
+      onSubmit={(event) => {
+        if (!validate(values)) {
+          event.preventDefault();
+        }
+      }}
+      noValidate
+      className="flex w-full flex-col gap-5"
+    >
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="profileId" className={labelClass}>
+            Member
+          </label>
+          <select
+            id="profileId"
+            name="profileId"
+            value={values.profileId}
+            onChange={(event) =>
+              updateField("profileId", event.target.value)
+            }
+            className={`${inputClass} bg-charcoal`}
+          >
+            {profiles.map((profile) => (
+              <option
+                key={profile.id}
+                value={profile.id}
+                className="bg-charcoal"
+              >
+                {profile.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="category" className={labelClass}>
+            Category
+          </label>
+          <input
+            id="category"
+            name="category"
+            type="text"
+            placeholder="Lodging, transportation, food..."
+            value={values.category}
+            onChange={(event) => updateField("category", event.target.value)}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="description" className={labelClass}>
+          Description
+        </label>
+        <input
+          id="description"
+          name="description"
+          type="text"
+          value={values.description}
+          onChange={(event) =>
+            updateField("description", event.target.value)
+          }
+          className={inputClass}
+        />
+        {fieldErrors.description ? (
+          <p className="text-sm text-off-white/70">
+            {fieldErrors.description}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="amount" className={labelClass}>
+            Amount ($)
+          </label>
+          <input
+            id="amount"
+            name="amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            inputMode="decimal"
+            value={values.amount}
+            onChange={(event) => updateField("amount", event.target.value)}
+            className={inputClass}
+          />
+          {fieldErrors.amount ? (
+            <p className="text-sm text-off-white/70">{fieldErrors.amount}</p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <label htmlFor="dueDate" className={labelClass}>
+            Due date
+          </label>
+          <input
+            id="dueDate"
+            name="dueDate"
+            type="date"
+            value={values.dueDate}
+            onChange={(event) => updateField("dueDate", event.target.value)}
+            className={inputClass}
+          />
+          {fieldErrors.dueDate ? (
+            <p className="text-sm text-off-white/70">{fieldErrors.dueDate}</p>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label htmlFor="notes" className={labelClass}>
+          Notes
+        </label>
+        <textarea
+          id="notes"
+          name="notes"
+          rows={2}
+          value={values.notes}
+          onChange={(event) => updateField("notes", event.target.value)}
+          className={`${inputClass} resize-none`}
+        />
+      </div>
+
+      {state.error ? (
+        <p className="text-sm text-off-white/90">{state.error}</p>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="mt-2 w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal transition-opacity disabled:opacity-50"
+      >
+        {isPending ? "Adding..." : "Add charge"}
+      </button>
+    </form>
+  );
+}

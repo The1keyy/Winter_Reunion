@@ -35,6 +35,7 @@ export default async function HomePage() {
     { href: "/activities", label: "Activities" },
     { href: "/suggestions", label: "Suggestions" },
     { href: "/polls", label: "Polls" },
+    { href: "/payments", label: "Payments" },
   ];
 
   const quickLinksRow = (
