@@ -83,9 +83,10 @@ export function toE164Phone(phone: string): string | null {
 async function sendEmail(
   payload: LoginDetailsPayload
 ): Promise<{ ok: boolean; reason?: string }> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY?.trim();
   const from =
-    process.env.RESEND_FROM_EMAIL || "Winter Reunion <onboarding@resend.dev>";
+    process.env.RESEND_FROM_EMAIL?.trim() ||
+    "Winter Reunion <onboarding@resend.dev>";
 
   if (!apiKey) {
     return {
@@ -94,10 +95,13 @@ async function sendEmail(
     };
   }
 
+  const replyTo = process.env.RESEND_REPLY_TO?.trim() || undefined;
+
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
     from,
     to: [payload.email],
+    ...(replyTo ? { replyTo } : {}),
     subject: "Your Winter Reunion 2027 login",
     text: credentialsText(payload),
     html: credentialsHtml(payload),
