@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { TripOverview } from "@/components/trip/trip-overview";
 import { getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
@@ -27,15 +29,33 @@ export default async function HomePage() {
             ? "Trip details haven't been set up yet. Add the trip name, dates, and location to get started."
             : "Trip details haven't been set up yet. Check back soon."}
         </p>
+        {canSetUpTrip ? (
+          <Link
+            href="/admin/trip-settings"
+            className="mt-2 w-fit border border-off-white px-4 py-2.5 text-sm font-normal text-off-white transition-opacity hover:opacity-80"
+          >
+            Set up trip details
+          </Link>
+        ) : null}
       </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm font-normal text-off-white/70">
-        Welcome{profile ? `, ${profile.name}` : ""}.
-      </p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm font-normal text-off-white/70">
+          Welcome{profile ? `, ${profile.name}` : ""}.
+        </p>
+        {canSetUpTrip ? (
+          <Link
+            href="/admin/trip-settings"
+            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+          >
+            Edit trip details
+          </Link>
+        ) : null}
+      </div>
       <TripOverview trip={trip} />
     </div>
   );
