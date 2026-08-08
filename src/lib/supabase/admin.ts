@@ -12,11 +12,11 @@ import type { Database } from "@/types/database";
  * built-in access control of its own.
  */
 export function createAdminClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!serviceRoleKey) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env.local (and your Vercel project's environment variables) from Supabase dashboard > Project Settings > API."
+      "SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env.local (and your Vercel project's environment variables) from Supabase dashboard > Project Settings → API."
     );
   }
 

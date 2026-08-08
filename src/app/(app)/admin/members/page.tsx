@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { deleteMember } from "@/app/(app)/admin/members/actions";
+import { MemberRoleForm } from "@/components/admin/member-role-form";
 import { ResetPasswordForm } from "@/components/admin/reset-password-form";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
@@ -29,9 +31,8 @@ export default async function MembersPage() {
           Members
         </h1>
         <p className="text-sm font-normal text-off-white/70">
-          Everyone signs in with their <span className="text-off-white">email</span>{" "}
-          + the password they chose at join (they screenshot it). You can&apos;t
-          see their old password — set a new one below and text it to them.
+          Change roles, reset passwords, or delete people. Changes show up right
+          away on Home / Dashboard. Passwords can&apos;t be viewed — only reset.
         </p>
       </div>
 
@@ -48,9 +49,8 @@ export default async function MembersPage() {
           {profile.email || user.email}
         </p>
         <p className="text-sm font-normal text-off-white/60">
-          Sign-in page: https://winter-reunion.vercel.app/login — use the
-          password you picked when you created this account (or reset it below
-          on your own row).
+          Sign in at https://winter-reunion.vercel.app/login with that email and
+          your admin password.
         </p>
       </div>
 
@@ -60,33 +60,58 @@ export default async function MembersPage() {
             No members yet.
           </p>
         ) : (
-          members.map((member) => (
-            <div
-              key={member.id}
-              className="flex flex-col gap-3 border border-warm-gray/20 p-4"
-            >
-              <div className="flex flex-col gap-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-base font-normal text-off-white">
-                    {member.name}
-                  </h2>
-                  <span className="border border-warm-gray/50 px-1.5 py-0.5 text-xs text-off-white/70">
-                    {member.role}
-                  </span>
+          members.map((member) => {
+            const isSelf = member.id === user.id;
+
+            return (
+              <div
+                key={member.id}
+                className="flex flex-col gap-4 border border-warm-gray/20 p-4"
+              >
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-normal text-off-white">
+                      {member.name}
+                    </h2>
+                    <span className="border border-warm-gray/50 px-1.5 py-0.5 text-xs text-off-white/70">
+                      {member.role}
+                    </span>
+                    {isSelf ? (
+                      <span className="text-xs text-off-white/40">you</span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm font-normal text-off-white/70">
+                    Email (login): {member.email}
+                  </p>
+                  <p className="text-sm font-normal text-off-white/70">
+                    Phone: {member.phone ?? "not added"}
+                  </p>
                 </div>
-                <p className="text-sm font-normal text-off-white/70">
-                  Email (login): {member.email}
-                </p>
-                <p className="text-sm font-normal text-off-white/70">
-                  Phone: {member.phone ?? "not added"}
-                </p>
+
+                <MemberRoleForm
+                  profileId={member.id}
+                  currentRole={member.role}
+                  locked={isSelf}
+                />
+
+                <ResetPasswordForm
+                  profileId={member.id}
+                  memberName={member.name}
+                />
+
+                {!isSelf ? (
+                  <form action={deleteMember.bind(null, member.id)}>
+                    <button
+                      type="submit"
+                      className="text-sm font-normal text-off-white/50 underline underline-offset-4 hover:text-off-white"
+                    >
+                      Delete user
+                    </button>
+                  </form>
+                ) : null}
               </div>
-              <ResetPasswordForm
-                profileId={member.id}
-                memberName={member.name}
-              />
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
