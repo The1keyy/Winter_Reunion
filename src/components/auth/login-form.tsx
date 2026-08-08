@@ -105,8 +105,7 @@ export function LoginForm() {
       </button>
 
       <p className="text-sm font-normal text-off-white/50">
-        Forgot your password? Ask your trip organizer to help you get back
-        in.
+        Forgot your password? Ask Key to reset it for you.
       </p>
     </form>
   );

@@ -22,6 +22,7 @@ export default async function HomePage() {
   ]);
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
+  const isPrimaryAdmin = profile?.role === "admin";
 
   const rsvpStatus = !registration
     ? "You haven't RSVP'd yet."
@@ -92,6 +93,14 @@ export default async function HomePage() {
                 Set up trip details
               </Link>
             ) : null}
+            {isPrimaryAdmin ? (
+              <Link
+                href="/admin/members"
+                className="w-fit text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+              >
+                Manage members
+              </Link>
+            ) : null}
             {quickLinksRow}
           </div>
         </div>
@@ -106,14 +115,24 @@ export default async function HomePage() {
         <p className="text-sm font-normal text-off-white/70">
           Welcome{profile ? `, ${profile.name}` : ""}.
         </p>
-        {canSetUpTrip ? (
-          <Link
-            href="/admin/trip-settings"
-            className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-          >
-            Edit trip details
-          </Link>
-        ) : null}
+        <div className="flex items-center gap-4">
+          {isPrimaryAdmin ? (
+            <Link
+              href="/admin/members"
+              className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+            >
+              Members
+            </Link>
+          ) : null}
+          {canSetUpTrip ? (
+            <Link
+              href="/admin/trip-settings"
+              className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+            >
+              Edit trip details
+            </Link>
+          ) : null}
+        </div>
       </div>
       <TripOverview trip={trip} />
       <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">

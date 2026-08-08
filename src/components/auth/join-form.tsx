@@ -164,7 +164,7 @@ export function JoinForm() {
           <p className="text-sm text-off-white/70">{fieldErrors.passcode}</p>
         ) : (
           <p className="text-sm font-normal text-off-white/50">
-            Ask your trip organizer if you don&apos;t have this yet.
+            Ask Key if you don&apos;t have this yet.
           </p>
         )}
       </div>

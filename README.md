@@ -28,6 +28,12 @@ New members self-signup at `/join`, gated by a single shared passcode (set via t
 https://your-deployed-domain.com/join
 ```
 
+## Resetting a member's password
+
+If someone gets locked out, the primary admin (role `admin`, not `co-admin`) can set a new password for them at `/admin/members` - there's no way to view an existing password since it's never stored anywhere in readable form, but a new one can be set directly and passed along.
+
+This requires `SUPABASE_SERVICE_ROLE_KEY` (from Supabase dashboard > Project Settings > API) to be set - see `.env.example`. Keep this out of version control and never expose it with a `NEXT_PUBLIC_` prefix; it bypasses Row Level Security entirely.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -12,7 +12,7 @@ export default function JoinPage() {
           </h1>
           <p className="text-sm font-normal text-off-white/70">
             Fill this out to create your account. You&apos;ll need the trip
-            passcode from your organizer to finish signing up.
+            passcode from Key to finish signing up.
           </p>
         </div>
 
