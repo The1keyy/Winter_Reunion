@@ -1,22 +1,14 @@
 import { redirect } from "next/navigation";
 
+import { CabinCard } from "@/components/cabins/cabin-card";
+import { CabinForm } from "@/components/cabins/cabin-form";
 import {
-  deleteCabin,
-  openCabinVoting,
-  rejectCabin,
-  removeVoteForCabin,
-  selectCabin,
-  voteForCabin,
-} from "@/app/(app)/cabins/actions";
-import { CabinForm } from "@/components/admin/cabin-form";
-import { getCabins, getCabinVotes } from "@/lib/supabase/cabins";
+  getCabins,
+  getCabinVotes,
+  type CabinVoteResponse,
+} from "@/lib/supabase/cabins";
 import { getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
-
-function formatCurrency(value: number | null) {
-  if (value == null) return null;
-  return `$${value.toLocaleString()}`;
-}
 
 export default async function CabinsPage() {
   const supabase = await createClient();
@@ -36,191 +28,108 @@ export default async function CabinsPage() {
 
   const isAdmin = profile?.role === "admin" || profile?.role === "co-admin";
 
-  const voteCountsByCabin = new Map<string, number>();
-  const votedCabinIds = new Set<string>();
+  const responsesByCabin = new Map<string, { yes: number; no: number }>();
+  const myResponses = new Map<string, CabinVoteResponse>();
+
   for (const vote of votes) {
-    voteCountsByCabin.set(
-      vote.cabin_id,
-      (voteCountsByCabin.get(vote.cabin_id) ?? 0) + 1
-    );
-    if (vote.profile_id === user.id) votedCabinIds.add(vote.cabin_id);
+    const counts = responsesByCabin.get(vote.cabin_id) ?? { yes: 0, no: 0 };
+    if (vote.response === "yes") counts.yes += 1;
+    if (vote.response === "no") counts.no += 1;
+    responsesByCabin.set(vote.cabin_id, counts);
+
+    if (vote.profile_id === user.id) {
+      myResponses.set(vote.cabin_id, vote.response);
+    }
   }
 
+  const openCards = cabins
+    .filter((cabin) => cabin.status === "proposed" || cabin.status === "voting")
+    .sort((a, b) => {
+      const aMine = myResponses.has(a.id) ? 1 : 0;
+      const bMine = myResponses.has(b.id) ? 1 : 0;
+      if (aMine !== bMine) return aMine - bMine;
+      const aYes = responsesByCabin.get(a.id)?.yes ?? 0;
+      const bYes = responsesByCabin.get(b.id)?.yes ?? 0;
+      return bYes - aYes;
+    });
+  const closedCards = cabins.filter(
+    (cabin) => cabin.status === "selected" || cabin.status === "rejected"
+  );
+  const pendingForYou = openCards.filter((c) => !myResponses.has(c.id)).length;
+
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-light text-off-white md:text-3xl">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <header className="wr-fade-up flex flex-col gap-1">
+        <span className="wr-section-label">Where we stay</span>
+        <h1 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
           Cabins
         </h1>
-        <p className="text-sm font-normal text-off-white/70">
-          {isAdmin
-            ? "Propose cabins, open voting, and mark one as selected."
-            : "Vote for the cabins you'd like to stay in."}
+        <p className="text-sm text-off-white/70">
+          {pendingForYou > 0
+            ? `${pendingForYou} waiting on your vote. Tap I'm in or Out.`
+            : openCards.length > 0
+              ? "You're caught up. Browse stays or add a listing."
+              : "Nothing up yet — post the first cabin."}
         </p>
-      </div>
+      </header>
 
-      {isAdmin ? (
-        <div className="flex flex-col gap-4 border-b border-warm-gray/20 pb-8">
-          <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-            Propose a cabin
+      <section className="flex flex-col gap-3">
+        <div className="flex items-end justify-between gap-3">
+          <span className="wr-section-label">Up for a vote</span>
+          <span className="text-xs font-semibold text-ember tabular-nums">
+            {openCards.length}
           </span>
-          <CabinForm />
         </div>
-      ) : null}
 
-      <div className="flex flex-col gap-6">
-        {cabins.length === 0 ? (
-          <p className="text-sm font-normal text-off-white/60">
-            No cabins proposed yet.
-          </p>
+        {openCards.length === 0 ? (
+          <p className="wr-hint">No open stays. Use + below to add one.</p>
         ) : (
-          cabins.map((cabin) => {
-            const voteCount = voteCountsByCabin.get(cabin.id) ?? 0;
-            const hasVoted = votedCabinIds.has(cabin.id);
-            const canVote = cabin.status === "voting";
-
-            return (
-              <div
-                key={cabin.id}
-                className="flex flex-col gap-3 border border-warm-gray/20 p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-normal text-off-white">
-                        {cabin.url ? (
-                          <a
-                            href={cabin.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="underline underline-offset-4 hover:text-off-white/80"
-                          >
-                            {cabin.name}
-                          </a>
-                        ) : (
-                          cabin.name
-                        )}
-                      </h2>
-                      <span
-                        className={
-                          "border px-1.5 py-0.5 text-xs " +
-                          (cabin.status === "selected"
-                            ? "border-winter-green text-winter-green"
-                            : "border-warm-gray/50 text-off-white/70")
-                        }
-                      >
-                        {cabin.status}
-                      </span>
-                    </div>
-                    {cabin.location ? (
-                      <p className="text-sm font-normal text-off-white/60">
-                        {cabin.location}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-sm font-normal text-off-white/80">
-                      {voteCount} {voteCount === 1 ? "vote" : "votes"}
-                    </span>
-                    {canVote ? (
-                      <form
-                        action={
-                          hasVoted
-                            ? removeVoteForCabin.bind(null, cabin.id)
-                            : voteForCabin.bind(null, cabin.id)
-                        }
-                      >
-                        <button
-                          type="submit"
-                          className={
-                            "border px-3 py-1.5 text-sm font-normal transition-colors " +
-                            (hasVoted
-                              ? "border-off-white bg-off-white text-charcoal"
-                              : "border-warm-gray/40 text-off-white hover:border-off-white")
-                          }
-                        >
-                          {hasVoted ? "Voted" : "Vote"}
-                        </button>
-                      </form>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm font-normal text-off-white/70">
-                  {cabin.price_total != null ? (
-                    <span>Total: {formatCurrency(cabin.price_total)}</span>
-                  ) : null}
-                  {cabin.price_per_person != null ? (
-                    <span>
-                      Per person: {formatCurrency(cabin.price_per_person)}
-                    </span>
-                  ) : null}
-                  {cabin.bedrooms != null ? (
-                    <span>{cabin.bedrooms} bed</span>
-                  ) : null}
-                  {cabin.bathrooms != null ? (
-                    <span>{cabin.bathrooms} bath</span>
-                  ) : null}
-                  {cabin.max_occupancy != null ? (
-                    <span>Sleeps {cabin.max_occupancy}</span>
-                  ) : null}
-                </div>
-
-                {cabin.notes ? (
-                  <p className="text-sm font-normal whitespace-pre-wrap text-off-white/70">
-                    {cabin.notes}
-                  </p>
-                ) : null}
-
-                {isAdmin ? (
-                  <div className="flex flex-wrap gap-4 border-t border-warm-gray/20 pt-3">
-                    {cabin.status === "proposed" ? (
-                      <form action={openCabinVoting.bind(null, cabin.id)}>
-                        <button
-                          type="submit"
-                          className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-                        >
-                          Open voting
-                        </button>
-                      </form>
-                    ) : null}
-                    {cabin.status !== "selected" ? (
-                      <form action={selectCabin.bind(null, cabin.id)}>
-                        <button
-                          type="submit"
-                          className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-                        >
-                          Mark selected
-                        </button>
-                      </form>
-                    ) : null}
-                    {cabin.status !== "rejected" &&
-                    cabin.status !== "selected" ? (
-                      <form action={rejectCabin.bind(null, cabin.id)}>
-                        <button
-                          type="submit"
-                          className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
-                        >
-                          Reject
-                        </button>
-                      </form>
-                    ) : null}
-                    <form action={deleteCabin.bind(null, cabin.id)}>
-                      <button
-                        type="submit"
-                        className="text-sm font-normal text-off-white/50 hover:text-off-white"
-                      >
-                        Delete
-                      </button>
-                    </form>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {openCards.map((cabin) => {
+              const counts = responsesByCabin.get(cabin.id) ?? {
+                yes: 0,
+                no: 0,
+              };
+              return (
+                <CabinCard
+                  key={cabin.id}
+                  cabin={cabin}
+                  yesCount={counts.yes}
+                  noCount={counts.no}
+                  myResponse={myResponses.get(cabin.id)}
+                  isAdmin={isAdmin}
+                />
+              );
+            })}
+          </div>
         )}
-      </div>
+      </section>
+
+      <CabinForm />
+
+      {closedCards.length > 0 ? (
+        <section className="flex flex-col gap-3 border-t border-warm-gray/20 pt-5">
+          <span className="wr-section-label">Settled</span>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {closedCards.map((cabin) => {
+              const counts = responsesByCabin.get(cabin.id) ?? {
+                yes: 0,
+                no: 0,
+              };
+              return (
+                <CabinCard
+                  key={cabin.id}
+                  cabin={cabin}
+                  yesCount={counts.yes}
+                  noCount={counts.no}
+                  myResponse={myResponses.get(cabin.id)}
+                  isAdmin={isAdmin}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

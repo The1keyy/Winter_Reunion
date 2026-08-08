@@ -2,17 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 
+import { fetchLinkPreview } from "@/lib/link-preview";
 import {
-  addCabinVote,
   createCabin,
   deleteCabinById,
   removeCabinVote,
+  setCabinVote,
   updateCabinStatus,
+  type CabinVoteResponse,
 } from "@/lib/supabase/cabins";
 import { getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
 import { setSelectedCabin } from "@/lib/supabase/trip-settings";
-import { cabinSchema } from "@/lib/validations/cabin";
+import { cabinCardSchema } from "@/lib/validations/cabin";
 
 export interface CabinFormState {
   error?: string;
@@ -20,7 +22,7 @@ export interface CabinFormState {
   postedAt?: number;
 }
 
-async function requireAdmin() {
+async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,13 +42,13 @@ export async function proposeCabin(
   _prevState: CabinFormState,
   formData: FormData
 ): Promise<CabinFormState> {
-  const { supabase, user, isAdmin } = await requireAdmin();
+  const { supabase, user } = await requireUser();
 
-  if (!user || !isAdmin) {
-    return { error: "Only trip admins can propose cabins." };
+  if (!user) {
+    return { error: "Sign in to add a cabin card." };
   }
 
-  const parsed = cabinSchema.safeParse({
+  const parsed = cabinCardSchema.safeParse({
     name: formData.get("name"),
     url: formData.get("url"),
     location: formData.get("location"),
@@ -59,11 +61,36 @@ export async function proposeCabin(
   });
 
   if (!parsed.success) {
-    return { error: "Check that all fields are filled in correctly." };
+    return {
+      error:
+        parsed.error.issues[0]?.message ??
+        "Check that all fields are filled in correctly.",
+    };
   }
 
+  let linkTitle: string | null = null;
+  let linkDescription: string | null = null;
+  let linkImage: string | null = null;
+  let hostname: string | null = null;
+
+  if (parsed.data.url) {
+    const preview = await fetchLinkPreview(parsed.data.url);
+    if (preview) {
+      linkTitle = preview.title;
+      linkDescription = preview.description;
+      linkImage = preview.image;
+      hostname = preview.hostname;
+    }
+  }
+
+  const name =
+    parsed.data.name ||
+    linkTitle ||
+    hostname ||
+    "Untitled cabin";
+
   const result = await createCabin(supabase, user.id, {
-    name: parsed.data.name,
+    name,
     url: parsed.data.url,
     location: parsed.data.location,
     price_total: parsed.data.priceTotal,
@@ -72,13 +99,21 @@ export async function proposeCabin(
     bathrooms: parsed.data.bathrooms,
     max_occupancy: parsed.data.maxOccupancy,
     notes: parsed.data.notes,
+    link_title: linkTitle,
+    link_description: linkDescription,
+    link_image: linkImage,
+    status: "voting",
   });
 
   if (!result) {
-    return { error: "Could not add the cabin. Please try again." };
+    return {
+      error:
+        "Could not add the cabin. If this keeps failing, ask Key to run the latest database update.",
+    };
   }
 
   revalidatePath("/cabins");
+  revalidatePath("/home");
 
   return { success: true, postedAt: Date.now() };
 }
@@ -88,7 +123,7 @@ export async function openCabinVoting(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateCabinStatus(supabase, id, "voting");
@@ -100,7 +135,7 @@ export async function selectCabin(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateCabinStatus(supabase, id, "selected");
@@ -114,7 +149,7 @@ export async function rejectCabin(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateCabinStatus(supabase, id, "rejected");
@@ -126,39 +161,37 @@ export async function deleteCabin(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await deleteCabinById(supabase, id);
   revalidatePath("/cabins");
+  revalidatePath("/home");
 }
 
-export async function voteForCabin(
+export async function respondToCabin(
   cabinId: string,
+  response: CabinVoteResponse,
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await requireUser();
   if (!user) return;
 
-  await addCabinVote(supabase, cabinId, user.id);
+  await setCabinVote(supabase, cabinId, user.id, response);
   revalidatePath("/cabins");
+  revalidatePath("/home");
 }
 
-export async function removeVoteForCabin(
+export async function retractCabinVote(
   cabinId: string,
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await requireUser();
   if (!user) return;
 
   await removeCabinVote(supabase, cabinId, user.id);
   revalidatePath("/cabins");
+  revalidatePath("/home");
 }

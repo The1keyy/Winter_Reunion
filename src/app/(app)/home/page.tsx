@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AnnouncementList } from "@/components/announcements/announcement-list";
+import { NextMove, type NextMoveStep } from "@/components/guidance/next-move";
 import { PhonePrompt } from "@/components/profile/phone-prompt";
 import { TripOverview } from "@/components/trip/trip-overview";
 import { HomeUpdates } from "@/components/updates/home-updates";
@@ -46,6 +47,9 @@ export default async function HomePage() {
 
   const canSetUpTrip = profile?.role === "admin" || profile?.role === "co-admin";
   const needsPhone = Boolean(user && profile && !profile.phone);
+  const outstanding = payments.filter(
+    (payment) => payment.status === "unpaid" || payment.status === "pending"
+  );
 
   const { personal, group } = buildHomeUpdates({
     registration,
@@ -57,91 +61,114 @@ export default async function HomePage() {
     talkPosts,
   });
 
-  const rsvpStatus = !registration
-    ? "You haven't RSVP'd yet."
-    : registration.attending
-      ? "You're marked as attending."
-      : "You're marked as not attending.";
+  const steps: NextMoveStep[] = [
+    {
+      id: "rsvp",
+      label: registration
+        ? registration.attending
+          ? "RSVP: you're in"
+          : "RSVP: not attending"
+        : "RSVP — tell Key if you're going",
+      detail: "One tap. Takes under a minute. Everyone plans around this.",
+      href: "/rsvp",
+      cta: registration ? "Update RSVP" : "RSVP now",
+      done: Boolean(registration),
+      priority: true,
+    },
+    {
+      id: "phone",
+      label: profile?.phone
+        ? "Number on file"
+        : "Add your number for urgent texts",
+      detail: "So Key can reach you when a cabin or payment drops.",
+      href: "/home#phone",
+      cta: "Add number",
+      done: Boolean(profile?.phone),
+    },
+    {
+      id: "pay",
+      label:
+        outstanding.length === 0
+          ? "Payments clear"
+          : `Settle ${outstanding.length} open charge${outstanding.length === 1 ? "" : "s"}`,
+      detail:
+        outstanding.length === 0
+          ? "You're good on money for now."
+          : "Don't leave the group waiting — check what you owe.",
+      href: "/payments",
+      cta: "Open payments",
+      done: outstanding.length === 0,
+    },
+  ];
 
-  const quickLinks = [
-    { href: "/rsvp", label: registration ? "Update RSVP" : "RSVP now" },
-    { href: "/talk", label: "Talk" },
+  const exploreLinks = [
     { href: "/cabins", label: "Cabins" },
     { href: "/activities", label: "Activities" },
-    { href: "/suggestions", label: "Suggestions" },
     { href: "/polls", label: "Polls" },
+    { href: "/suggestions", label: "Ideas" },
     { href: "/payments", label: "Payments" },
   ];
 
-  const quickLinksRow = (
-    <div className="flex flex-wrap gap-3">
-      {quickLinks.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
-        >
-          {link.label}
-        </Link>
-      ))}
-    </div>
-  );
-
-  const adminShortcuts = canSetUpTrip ? (
-    <div className="flex flex-col gap-2 border border-warm-gray/20 p-4">
-      <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-        Admin
-      </span>
-      <p className="text-sm font-normal text-off-white/60">
-        Run payments, posts, and trip setup from one dashboard.
-      </p>
-      <div className="mt-1 flex flex-wrap gap-3">
-        <Link
-          href="/admin"
-          className="w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal"
-        >
-          Open dashboard
-        </Link>
-        <Link
-          href="/admin/announcements"
-          className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white hover:border-off-white"
-        >
-          Quick post
-        </Link>
-        <Link
-          href="/payments"
-          className="w-fit border border-warm-gray/40 px-4 py-2.5 text-sm font-normal text-off-white hover:border-off-white"
-        >
-          Payments
-        </Link>
-      </div>
-    </div>
-  ) : null;
-
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-xl font-light text-off-white md:text-2xl">
-          Welcome{profile ? `, ${profile.name}` : ""}.
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-7">
+      <header className="wr-fade-up flex flex-col gap-2">
+        <span className="wr-section-label">Home base</span>
+        <h1 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
+          {profile ? `Hey ${profile.name.split(" ")[0]}.` : "Hey."}
         </h1>
-        <p className="text-sm font-normal text-off-white/70">
+        <p className="max-w-lg text-sm leading-relaxed text-off-white/70 md:text-[15px]">
           {trip
-            ? "Check small notifications below, then jump into what needs you."
+            ? "Finish your checklist, then jump into whatever needs you. Keep it simple."
             : canSetUpTrip
-              ? "Open the dashboard to set trip details and post your first update."
-              : "Trip details aren't set yet. Finish your RSVP while you wait."}
+              ? "Trip details aren't live yet — open Admin and set them so the crew has a target."
+              : "Trip details aren't set yet. RSVP anyway so Key knows your status."}
         </p>
-      </div>
+      </header>
 
-      {needsPhone ? <PhonePrompt /> : null}
-      {adminShortcuts}
+      <NextMove steps={steps} name={profile?.name} />
 
-      {trip ? <TripOverview trip={trip} /> : null}
+      {needsPhone ? (
+        <div id="phone" className="wr-fade-up-delay-1 scroll-mt-24">
+          <PhonePrompt />
+        </div>
+      ) : null}
 
-      <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
-        <p className="text-sm font-normal text-off-white/70">{rsvpStatus}</p>
-        {quickLinksRow}
-      </div>
+      {canSetUpTrip ? (
+        <div className="wr-panel wr-fade-up-delay-1 flex flex-col gap-3">
+          <span className="wr-section-label">Admin lane</span>
+          <p className="text-sm text-off-white/70">
+            Run payments, posts, and trip setup from one spot.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/admin" className="wr-btn-primary">
+              Open dashboard
+            </Link>
+            <Link href="/admin/announcements" className="wr-btn">
+              Quick post
+            </Link>
+            <Link href="/admin/members" className="wr-btn">
+              Members
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {trip ? (
+        <div className="wr-fade-up-delay-2">
+          <TripOverview trip={trip} />
+        </div>
+      ) : null}
+
+      <section className="flex flex-col gap-3">
+        <span className="wr-section-label">Explore</span>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {exploreLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="wr-btn justify-start">
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <HomeUpdates
         personal={personal}
@@ -149,22 +176,20 @@ export default async function HomePage() {
         hasPhone={Boolean(profile?.phone)}
       />
 
-      <div className="flex flex-col gap-3 border-t border-warm-gray/20 pt-4">
+      <section className="flex flex-col gap-3 border-t border-warm-gray/20 pt-5">
         <div className="flex items-center justify-between gap-4">
-          <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-            Latest announcements
-          </span>
+          <span className="wr-section-label">Announcements</span>
           {canSetUpTrip ? (
             <Link
               href="/admin/announcements"
-              className="text-sm font-normal text-off-white/70 underline underline-offset-4 hover:text-off-white"
+              className="text-sm font-medium text-ice underline-offset-4 hover:text-off-white hover:underline"
             >
               Post / manage
             </Link>
           ) : null}
         </div>
         <AnnouncementList announcements={announcements} />
-      </div>
+      </section>
     </div>
   );
 }

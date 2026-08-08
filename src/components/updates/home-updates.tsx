@@ -9,20 +9,17 @@ interface HomeUpdatesProps {
 }
 
 function Chip({ item }: { item: HomeUpdateItem }) {
-  const className =
-    "inline-flex max-w-full items-center gap-2 border border-warm-gray/30 px-2.5 py-1.5 text-left text-xs font-normal text-off-white/85 transition-colors hover:border-off-white/60";
-
   const label = (
     <>
       <span className="truncate">{item.headline}</span>
       {item.href && item.cta ? (
-        <span className="shrink-0 text-off-white/50">{item.cta}</span>
+        <span className="shrink-0 text-ember">{item.cta}</span>
       ) : null}
     </>
   );
 
   if (!item.href) {
-    return <div className={className}>{label}</div>;
+    return <div className="wr-chip">{label}</div>;
   }
 
   if (item.href.startsWith("http")) {
@@ -31,7 +28,7 @@ function Chip({ item }: { item: HomeUpdateItem }) {
         href={item.href}
         target="_blank"
         rel="noopener noreferrer"
-        className={className}
+        className="wr-chip"
         title={item.detail}
       >
         {label}
@@ -40,7 +37,7 @@ function Chip({ item }: { item: HomeUpdateItem }) {
   }
 
   return (
-    <Link href={item.href} className={className} title={item.detail}>
+    <Link href={item.href} className="wr-chip" title={item.detail}>
       {label}
     </Link>
   );
@@ -57,16 +54,16 @@ function ChipRow({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
+      <span className="wr-section-label">
         {label}
         {items.length > 0 ? (
-          <span className="ml-2 normal-case tracking-normal text-off-white/40">
+          <span className="ml-2 normal-case tracking-normal text-warm-gray">
             {items.length}
           </span>
         ) : null}
       </span>
       {items.length === 0 ? (
-        <p className="text-xs font-normal text-off-white/40">{empty}</p>
+        <p className="text-xs text-warm-gray">{empty}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {items.map((item) => (
@@ -82,24 +79,23 @@ export function HomeUpdates({ personal, group, hasPhone }: HomeUpdatesProps) {
   const total = personal.length + group.length;
 
   return (
-    <div className="flex flex-col gap-4 border-t border-warm-gray/20 pt-4">
+    <section className="flex flex-col gap-4 border-t border-warm-gray/20 pt-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-base font-normal text-off-white">
-            Notifications
+          <h2 className="font-heading text-lg font-semibold text-off-white">
+            Alerts
             {total > 0 ? (
-              <span className="ml-2 text-sm text-off-white/50">{total}</span>
+              <span className="ml-2 text-sm font-medium text-ember">{total}</span>
             ) : null}
           </h2>
-          <p className="text-xs font-normal text-off-white/50">
-            Small alerts — personal ones are only yours; group ones are for
-            everyone.
+          <p className="wr-hint">
+            Personal = only you. Group = whole crew.
           </p>
         </div>
-        <p className="text-xs font-normal text-off-white/40">
+        <p className="text-xs text-warm-gray">
           {hasPhone
-            ? "Number on file for Key to text urgent stuff."
-            : "Add your number above so Key can reach you."}
+            ? "Number on file for urgent texts."
+            : "Add your number so Key can reach you."}
         </p>
       </div>
       <ChipRow
@@ -112,6 +108,6 @@ export function HomeUpdates({ personal, group, hasPhone }: HomeUpdatesProps) {
         empty="No group alerts right now."
         items={group}
       />
-    </div>
+    </section>
   );
 }

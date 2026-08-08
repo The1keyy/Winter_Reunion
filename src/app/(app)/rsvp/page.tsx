@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { PageGuide } from "@/components/guidance/page-guide";
 import { RsvpForm } from "@/components/rsvp/rsvp-form";
 import { getRegistration } from "@/lib/supabase/registrations";
 import { createClient } from "@/lib/supabase/server";
@@ -17,17 +18,16 @@ export default async function RsvpPage() {
   const registration = await getRegistration(supabase, user.id);
 
   return (
-    <div className="flex w-full max-w-lg flex-col gap-8">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-light text-off-white md:text-3xl">
-          RSVP
-        </h1>
-        <p className="text-sm font-normal text-off-white/70">
-          Let us know if you&apos;re coming to Winter Reunion 2027.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-8">
+      <PageGuide
+        step={registration ? "Update anytime" : "Step one"}
+        title="RSVP"
+        body="Tell the crew if you're in. One clear answer helps everyone plan cabins, rides, and budget."
+      />
 
-      <RsvpForm registration={registration} />
+      <div className="wr-panel wr-fade-up-delay-1">
+        <RsvpForm registration={registration} />
+      </div>
     </div>
   );
 }

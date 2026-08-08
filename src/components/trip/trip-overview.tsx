@@ -38,18 +38,19 @@ export function TripOverview({ trip }: TripOverviewProps) {
 
   const budgetLabel =
     trip.estimated_budget_low != null || trip.estimated_budget_high != null
-      ? `Estimated budget: $${trip.estimated_budget_low ?? "?"}\u2013$${
+      ? `Est. budget: $${trip.estimated_budget_low ?? "?"}\u2013$${
           trip.estimated_budget_high ?? "?"
         }`
       : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <section className="wr-panel flex flex-col gap-5">
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-light text-off-white md:text-3xl">
+        <span className="wr-section-label">The trip</span>
+        <h2 className="font-heading text-2xl font-semibold text-off-white md:text-3xl">
           {trip.trip_name || "Winter Reunion 2027"}
-        </h1>
-        <p className="text-sm font-normal text-off-white/70">
+        </h2>
+        <p className="text-sm text-off-white/70">
           {[dateRange, location].filter(Boolean).join(" \u00b7 ") ||
             "Details coming soon."}
         </p>
@@ -64,16 +65,14 @@ export function TripOverview({ trip }: TripOverviewProps) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 border-t border-warm-gray/20 pt-4 sm:grid-cols-2 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 border-t border-warm-gray/20 pt-4 sm:grid-cols-2 md:grid-cols-3">
         {statuses.map((item) => (
           <div key={item.label} className="flex flex-col gap-1.5">
-            <span className="text-xs font-normal tracking-wide text-off-white/50 uppercase">
-              {item.label}
-            </span>
+            <span className="wr-section-label">{item.label}</span>
             <StatusBadge status={item.value} />
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

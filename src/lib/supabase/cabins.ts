@@ -2,14 +2,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Cabin, CabinStatus, Database } from "@/types/database";
 
-/** Fetches all cabin proposals, oldest first. */
+export type CabinVoteResponse = "yes" | "no";
+
+/** Fetches all cabin proposals, newest first. */
 export async function getCabins(
   supabase: SupabaseClient<Database>
 ): Promise<Cabin[]> {
   const { data, error } = await supabase
     .from("cabins")
     .select("*")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("getCabins failed", error);
@@ -22,26 +24,26 @@ export async function getCabins(
 export interface CabinVoteRow {
   cabin_id: string;
   profile_id: string;
+  response: CabinVoteResponse;
 }
 
-/**
- * Fetches every cabin vote so the caller can compute per-cabin counts and
- * whether the current user has already voted. The trip's guest list is
- * small enough that this is cheaper than a separate aggregate query.
- */
 export async function getCabinVotes(
   supabase: SupabaseClient<Database>
 ): Promise<CabinVoteRow[]> {
   const { data, error } = await supabase
     .from("cabin_votes")
-    .select("cabin_id, profile_id");
+    .select("cabin_id, profile_id, response");
 
   if (error) {
     console.error("getCabinVotes failed", error);
     return [];
   }
 
-  return data ?? [];
+  return (data ?? []).map((row) => ({
+    cabin_id: row.cabin_id,
+    profile_id: row.profile_id,
+    response: (row.response === "no" ? "no" : "yes") as CabinVoteResponse,
+  }));
 }
 
 export interface CabinInput {
@@ -54,20 +56,25 @@ export interface CabinInput {
   bathrooms: number | null;
   max_occupancy: number | null;
   notes: string | null;
+  link_title?: string | null;
+  link_description?: string | null;
+  link_image?: string | null;
+  status?: CabinStatus;
 }
 
-/**
- * Creates a cabin proposal. Relies on the "cabins_insert_admin_only" RLS
- * policy - callers should also gate this in the UI.
- */
 export async function createCabin(
   supabase: SupabaseClient<Database>,
   createdBy: string,
   input: CabinInput
 ): Promise<Cabin | null> {
+  const { status, ...fields } = input;
   const { data, error } = await supabase
     .from("cabins")
-    .insert({ created_by: createdBy, ...input })
+    .insert({
+      created_by: createdBy,
+      ...fields,
+      status: status ?? "voting",
+    })
     .select("*")
     .single();
 
@@ -79,10 +86,6 @@ export async function createCabin(
   return data;
 }
 
-/**
- * Updates a cabin's status. Relies on the "cabins_update_admin_only" RLS
- * policy.
- */
 export async function updateCabinStatus(
   supabase: SupabaseClient<Database>,
   id: string,
@@ -101,10 +104,6 @@ export async function updateCabinStatus(
   return true;
 }
 
-/**
- * Deletes a cabin proposal. Relies on the "cabins_delete_admin_only" RLS
- * policy.
- */
 export async function deleteCabinById(
   supabase: SupabaseClient<Database>,
   id: string
@@ -119,29 +118,34 @@ export async function deleteCabinById(
   return true;
 }
 
-/**
- * Records a vote from the current user for a cabin. Relies on the
- * "cabin_votes_insert_own" RLS policy and the (cabin_id, profile_id)
- * uniqueness constraint.
- */
-export async function addCabinVote(
+export async function setCabinVote(
   supabase: SupabaseClient<Database>,
   cabinId: string,
-  profileId: string
+  profileId: string,
+  response: CabinVoteResponse
 ): Promise<boolean> {
-  const { error } = await supabase
-    .from("cabin_votes")
-    .insert({ cabin_id: cabinId, profile_id: profileId });
+  const { error } = await supabase.from("cabin_votes").upsert(
+    { cabin_id: cabinId, profile_id: profileId, response },
+    { onConflict: "cabin_id,profile_id" }
+  );
 
   if (error) {
-    console.error("addCabinVote failed", error);
+    console.error("setCabinVote failed", error);
     return false;
   }
 
   return true;
 }
 
-/** Removes the current user's own vote for a cabin. */
+/** @deprecated use setCabinVote — kept for older call sites */
+export async function addCabinVote(
+  supabase: SupabaseClient<Database>,
+  cabinId: string,
+  profileId: string
+): Promise<boolean> {
+  return setCabinVote(supabase, cabinId, profileId, "yes");
+}
+
 export async function removeCabinVote(
   supabase: SupabaseClient<Database>,
   cabinId: string,

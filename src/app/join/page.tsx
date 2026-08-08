@@ -4,26 +4,28 @@ import { JoinForm } from "@/components/auth/join-form";
 
 export default function JoinPage() {
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center bg-charcoal px-6 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-light text-off-white md:text-3xl">
+    <main className="relative flex min-h-svh flex-col items-center justify-center px-6 py-12">
+      <div className="wr-fade-up flex w-full max-w-md flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <span className="wr-section-label">Invite only</span>
+          <h1 className="font-heading text-3xl font-semibold text-off-white md:text-4xl">
             Winter Reunion 2027
           </h1>
-          <p className="text-sm font-normal text-off-white/70">
-            First name, last initial, email, mobile, a password you pick, and
-            Key&apos;s trip passcode. We&apos;ll send your login to your email
-            (and text when SMS is on).
+          <p className="text-sm leading-relaxed text-off-white/70 md:text-[15px]">
+            Three quick steps. Screenshot your login at the end — that&apos;s
+            your key back in.
           </p>
         </div>
 
-        <JoinForm />
+        <div className="wr-panel">
+          <JoinForm />
+        </div>
 
-        <p className="text-sm font-normal text-off-white/50">
+        <p className="text-sm text-warm-gray">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-off-white/80 underline underline-offset-4 hover:text-off-white"
+            className="font-medium text-ice underline-offset-4 hover:text-off-white hover:underline"
           >
             Sign in instead
           </Link>

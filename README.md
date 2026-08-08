@@ -60,6 +60,8 @@ After pulling schema changes, run new SQL files in `supabase/migrations/` in the
 
 - `20260808000002_announcement_link_url.sql` — optional links on announcements
 - `20260808000003_talk_posts.sql` — Talk board (posts + replies)
+- `20260808000004_activity_cards_link.sql` — activity cards: link preview fields + members can propose
+- `20260808000005_cabin_cards_voting.sql` — cabin cards: Yes/No votes, link preview, members can propose
 
 ## Resetting a member's password
 

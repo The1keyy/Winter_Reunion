@@ -24,8 +24,7 @@ export function PhonePrompt() {
   if (state.success) {
     return (
       <FormNotice tone="success">
-        Number saved. You&apos;ll see personal updates here; Key can also reach
-        you when something urgent lands.
+        Number saved. Key can reach you when something urgent lands.
       </FormNotice>
     );
   }
@@ -41,15 +40,15 @@ export function PhonePrompt() {
   }
 
   return (
-    <div className="flex flex-col gap-3 border border-warm-gray/30 p-4">
+    <div className="wr-panel flex flex-col gap-3 border-ice/35">
       <div className="flex flex-col gap-1">
-        <h2 className="text-base font-normal text-off-white">
-          Add your number (30 seconds)
+        <span className="wr-section-label">30 seconds</span>
+        <h2 className="font-heading text-lg font-semibold text-off-white">
+          Drop your number
         </h2>
-        <p className="text-sm font-normal text-off-white/70">
-          So Key can text you when something important drops — a cabin pick, a
-          payment due, or a last-minute change. Your number stays private to
-          trip admins.
+        <p className="text-sm text-off-white/70">
+          Cabin picks, payment dues, last-minute changes — Key texts you. Private
+          to trip admins.
         </p>
       </div>
 
@@ -62,10 +61,7 @@ export function PhonePrompt() {
         className="flex flex-col gap-3 sm:flex-row sm:items-end"
       >
         <div className="flex flex-1 flex-col gap-2">
-          <label
-            htmlFor="phone"
-            className="text-sm font-normal text-off-white/80"
-          >
+          <label htmlFor="phone" className="wr-label">
             Mobile number
           </label>
           <input
@@ -80,17 +76,13 @@ export function PhonePrompt() {
               setPhone(event.target.value);
               if (fieldError) validate(event.target.value);
             }}
-            className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
+            className="wr-input"
           />
           {fieldError ? (
             <p className="text-sm text-off-white/70">{fieldError}</p>
           ) : null}
         </div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal transition-opacity disabled:opacity-50"
-        >
+        <button type="submit" disabled={isPending} className="wr-btn-primary">
           {isPending ? "Saving..." : "Save number"}
         </button>
       </form>
@@ -100,7 +92,7 @@ export function PhonePrompt() {
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        className="w-fit text-sm font-normal text-off-white/50 underline underline-offset-4 hover:text-off-white"
+        className="w-fit text-sm font-medium text-warm-gray underline-offset-4 hover:text-off-white hover:underline"
       >
         Not now
       </button>

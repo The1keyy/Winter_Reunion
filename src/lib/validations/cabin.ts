@@ -10,9 +10,18 @@ const optionalText = z.string().transform(emptyToNull);
 const optionalUrl = z
   .string()
   .transform(emptyToNull)
-  .refine((value) => value === null || /^https?:\/\//i.test(value), {
-    error: "Enter a URL starting with http:// or https://.",
-  });
+  .refine(
+    (value) => {
+      if (value === null) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { error: "Use a full link like https://..." }
+  );
 
 const optionalInteger = z
   .string()
@@ -30,16 +39,24 @@ const optionalAmount = z
   })
   .transform((value) => (value === null ? null : Number(value)));
 
-export const cabinSchema = z.object({
-  name: z.string().trim().min(1, { error: "Enter a cabin name." }),
-  url: optionalUrl,
-  location: optionalText,
-  priceTotal: optionalAmount,
-  pricePerPerson: optionalAmount,
-  bedrooms: optionalInteger,
-  bathrooms: optionalAmount,
-  maxOccupancy: optionalInteger,
-  notes: optionalText,
-});
+/** Anything goes — just need a name and/or a link. */
+export const cabinCardSchema = z
+  .object({
+    name: z.string().transform((value) => value.trim()),
+    url: optionalUrl,
+    pricePerPerson: optionalAmount,
+    priceTotal: optionalAmount,
+    notes: optionalText,
+    location: optionalText,
+    bedrooms: optionalInteger,
+    bathrooms: optionalAmount,
+    maxOccupancy: optionalInteger,
+  })
+  .refine((data) => data.name.length > 0 || data.url != null, {
+    error: "Add a name, a link, or both — whatever you’ve got.",
+    path: ["name"],
+  });
 
-export type CabinFormInput = z.infer<typeof cabinSchema>;
+export const cabinSchema = cabinCardSchema;
+
+export type CabinFormInput = z.infer<typeof cabinCardSchema>;

@@ -31,10 +31,6 @@ function toFormValues(registration: Registration | null): FormValues {
   };
 }
 
-const inputClass =
-  "border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white";
-const labelClass = "text-sm font-normal text-off-white/80";
-
 export function RsvpForm({ registration }: RsvpFormProps) {
   const [state, formAction, isPending] = useActionState(
     submitRsvp,
@@ -85,33 +81,46 @@ export function RsvpForm({ registration }: RsvpFormProps) {
       className="flex w-full flex-col gap-6"
     >
       <div className="flex flex-col gap-2">
-        <span className={labelClass}>Are you attending?</span>
-        <div className="flex gap-6">
-          {(["yes", "no"] as const).map((option) => (
-            <label
-              key={option}
-              className="flex items-center gap-2 text-sm font-normal text-off-white"
-            >
-              <input
-                type="radio"
-                name="attending"
-                value={option}
-                checked={values.attending === option}
-                onChange={() => updateField("attending", option)}
-                className="accent-off-white"
-              />
-              {option === "yes" ? "Yes, I'm in" : "No, can't make it"}
-            </label>
-          ))}
+        <span className="wr-label">Are you attending?</span>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            { value: "yes" as const, label: "I'm in" },
+            { value: "no" as const, label: "Can't make it" },
+          ]).map((option) => {
+            const selected = values.attending === option.value;
+            return (
+              <label
+                key={option.value}
+                className={
+                  "flex min-h-14 cursor-pointer items-center justify-center border px-3 text-sm font-semibold transition-[border-color,background-color,transform] duration-150 active:scale-[0.98] " +
+                  (selected
+                    ? "border-ember bg-ember/15 text-ember"
+                    : "border-warm-gray/40 text-off-white/80 hover:border-off-white/60")
+                }
+              >
+                <input
+                  type="radio"
+                  name="attending"
+                  value={option.value}
+                  checked={selected}
+                  onChange={() => updateField("attending", option.value)}
+                  className="sr-only"
+                />
+                {option.label}
+              </label>
+            );
+          })}
         </div>
         {fieldErrors.attending ? (
           <p className="text-sm text-off-white/70">{fieldErrors.attending}</p>
-        ) : null}
+        ) : (
+          <p className="wr-hint">Tap one. You can change it later.</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="guestsCount" className={labelClass}>
-          Guests you&apos;re bringing (not counting yourself)
+        <label htmlFor="guestsCount" className="wr-label">
+          Extra guests (not you)
         </label>
         <input
           id="guestsCount"
@@ -121,20 +130,18 @@ export function RsvpForm({ registration }: RsvpFormProps) {
           step="1"
           inputMode="numeric"
           value={values.guestsCount}
-          onChange={(event) =>
-            updateField("guestsCount", event.target.value)
-          }
-          className={inputClass}
+          onChange={(event) => updateField("guestsCount", event.target.value)}
+          className="wr-input"
         />
         {fieldErrors.guestsCount ? (
-          <p className="text-sm text-off-white/70">
-            {fieldErrors.guestsCount}
-          </p>
-        ) : null}
+          <p className="text-sm text-off-white/70">{fieldErrors.guestsCount}</p>
+        ) : (
+          <p className="wr-hint">0 if it&apos;s just you.</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="dietaryRestrictions" className={labelClass}>
+        <label htmlFor="dietaryRestrictions" className="wr-label">
           Dietary restrictions (optional)
         </label>
         <textarea
@@ -145,12 +152,12 @@ export function RsvpForm({ registration }: RsvpFormProps) {
           onChange={(event) =>
             updateField("dietaryRestrictions", event.target.value)
           }
-          className={`${inputClass} resize-none`}
+          className="wr-input resize-none"
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="notes" className={labelClass}>
+        <label htmlFor="notes" className="wr-label">
           Notes (optional)
         </label>
         <textarea
@@ -159,7 +166,7 @@ export function RsvpForm({ registration }: RsvpFormProps) {
           rows={3}
           value={values.notes}
           onChange={(event) => updateField("notes", event.target.value)}
-          className={`${inputClass} resize-none`}
+          className="wr-input resize-none"
         />
       </div>
 
@@ -171,11 +178,7 @@ export function RsvpForm({ registration }: RsvpFormProps) {
         </FormNotice>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="mt-2 w-fit border border-off-white bg-off-white px-4 py-2.5 text-sm font-normal text-charcoal transition-opacity disabled:opacity-50"
-      >
+      <button type="submit" disabled={isPending} className="wr-btn-primary w-full">
         {isPending ? "Saving..." : "Save RSVP"}
       </button>
     </form>

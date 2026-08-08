@@ -33,13 +33,13 @@ export function PasswordField({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-4">
-        <label htmlFor={id} className="text-sm font-normal text-off-white/80">
+        <label htmlFor={id} className="wr-label">
           {label}
         </label>
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          className="text-xs font-normal text-off-white/50 underline underline-offset-4 hover:text-off-white"
+          className="text-xs font-semibold tracking-wide text-ice uppercase underline-offset-4 hover:text-off-white hover:underline"
         >
           {visible ? "Hide" : "Show"}
         </button>
@@ -51,12 +51,12 @@ export function PasswordField({
         autoComplete={autoComplete}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border border-warm-gray/40 bg-transparent px-3 py-2.5 text-off-white outline-none focus:border-off-white"
+        className="wr-input"
       />
       {error ? (
         <p className="text-sm text-off-white/70">{error}</p>
       ) : hint ? (
-        <p className="text-sm font-normal text-off-white/50">{hint}</p>
+        <p className="wr-hint">{hint}</p>
       ) : null}
     </div>
   );

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
+import { fetchLinkPreview } from "@/lib/link-preview";
 import {
+  clearActivityResponse,
   createActivity,
   deleteActivityById,
   setActivityResponse,
@@ -10,7 +12,7 @@ import {
 } from "@/lib/supabase/activities";
 import { getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
-import { activitySchema } from "@/lib/validations/activity";
+import { activityCardSchema } from "@/lib/validations/activity";
 import type { ActivityResponseValue } from "@/types/database";
 
 export interface ActivityFormState {
@@ -19,7 +21,7 @@ export interface ActivityFormState {
   postedAt?: number;
 }
 
-async function requireAdmin() {
+async function requireUser() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,43 +41,73 @@ export async function proposeActivity(
   _prevState: ActivityFormState,
   formData: FormData
 ): Promise<ActivityFormState> {
-  const { supabase, user, isAdmin } = await requireAdmin();
+  const { supabase, user } = await requireUser();
 
-  if (!user || !isAdmin) {
-    return { error: "Only trip admins can propose activities." };
+  if (!user) {
+    return { error: "Sign in to add an activity card." };
   }
 
-  const parsed = activitySchema.safeParse({
+  const parsed = activityCardSchema.safeParse({
     name: formData.get("name"),
+    linkUrl: formData.get("linkUrl"),
+    costPerPerson: formData.get("costPerPerson"),
     description: formData.get("description"),
     category: formData.get("category"),
-    activityDate: formData.get("activityDate"),
-    startTime: formData.get("startTime"),
-    endTime: formData.get("endTime"),
-    location: formData.get("location"),
-    costPerPerson: formData.get("costPerPerson"),
   });
 
   if (!parsed.success) {
-    return { error: "Check that all fields are filled in correctly." };
+    return {
+      error:
+        parsed.error.issues[0]?.message ??
+        "Check that all fields are filled in correctly.",
+    };
   }
 
+  let linkTitle: string | null = null;
+  let linkDescription: string | null = null;
+  let linkImage: string | null = null;
+  let hostname: string | null = null;
+
+  if (parsed.data.linkUrl) {
+    const preview = await fetchLinkPreview(parsed.data.linkUrl);
+    if (preview) {
+      linkTitle = preview.title;
+      linkDescription = preview.description;
+      linkImage = preview.image;
+      hostname = preview.hostname;
+    }
+  }
+
+  const name =
+    parsed.data.name ||
+    linkTitle ||
+    hostname ||
+    "Untitled activity";
+
   const result = await createActivity(supabase, user.id, {
-    name: parsed.data.name,
+    name,
     description: parsed.data.description,
     category: parsed.data.category,
-    activity_date: parsed.data.activityDate,
-    start_time: parsed.data.startTime,
-    end_time: parsed.data.endTime,
-    location: parsed.data.location,
+    activity_date: null,
+    start_time: null,
+    end_time: null,
+    location: null,
     cost_per_person: parsed.data.costPerPerson,
+    link_url: parsed.data.linkUrl,
+    link_title: linkTitle,
+    link_description: linkDescription,
+    link_image: linkImage,
   });
 
   if (!result) {
-    return { error: "Could not add the activity. Please try again." };
+    return {
+      error:
+        "Could not add the card. If this keeps failing, ask Key to run the latest database update.",
+    };
   }
 
   revalidatePath("/activities");
+  revalidatePath("/home");
 
   return { success: true, postedAt: Date.now() };
 }
@@ -85,7 +117,7 @@ export async function confirmActivity(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateActivityStatus(supabase, id, "confirmed");
@@ -97,7 +129,7 @@ export async function cancelActivity(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateActivityStatus(supabase, id, "cancelled");
@@ -109,7 +141,7 @@ export async function reopenActivity(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await updateActivityStatus(supabase, id, "proposed");
@@ -121,25 +153,37 @@ export async function deleteActivity(
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const { supabase, isAdmin } = await requireAdmin();
+  const { supabase, isAdmin } = await requireUser();
   if (!isAdmin) return;
 
   await deleteActivityById(supabase, id);
   revalidatePath("/activities");
+  revalidatePath("/home");
 }
 
 export async function respondToActivity(
   activityId: string,
-  response: ActivityResponseValue,
+  response: Extract<ActivityResponseValue, "yes" | "no">,
   _formData: FormData
 ): Promise<void> {
   void _formData;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await requireUser();
   if (!user) return;
 
   await setActivityResponse(supabase, activityId, user.id, response);
   revalidatePath("/activities");
+  revalidatePath("/home");
+}
+
+export async function retractActivityVote(
+  activityId: string,
+  _formData: FormData
+): Promise<void> {
+  void _formData;
+  const { supabase, user } = await requireUser();
+  if (!user) return;
+
+  await clearActivityResponse(supabase, activityId, user.id);
+  revalidatePath("/activities");
+  revalidatePath("/home");
 }

@@ -15,7 +15,7 @@ export async function getActivities(
     .from("activities")
     .select("*")
     .order("activity_date", { ascending: true, nullsFirst: false })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.error("getActivities failed", error);
@@ -59,12 +59,13 @@ export interface ActivityInput {
   end_time: string | null;
   location: string | null;
   cost_per_person: number | null;
+  link_url?: string | null;
+  link_title?: string | null;
+  link_description?: string | null;
+  link_image?: string | null;
 }
 
-/**
- * Creates an activity proposal. Relies on the "activities_insert_admin_only"
- * RLS policy - callers should also gate this in the UI.
- */
+/** Creates an activity card. Members may insert their own; admins may insert any. */
 export async function createActivity(
   supabase: SupabaseClient<Database>,
   createdBy: string,
@@ -84,10 +85,6 @@ export async function createActivity(
   return data;
 }
 
-/**
- * Updates an activity's status. Relies on the "activities_update_admin_only"
- * RLS policy.
- */
 export async function updateActivityStatus(
   supabase: SupabaseClient<Database>,
   id: string,
@@ -106,10 +103,6 @@ export async function updateActivityStatus(
   return true;
 }
 
-/**
- * Deletes an activity. Relies on the "activities_delete_admin_only" RLS
- * policy.
- */
 export async function deleteActivityById(
   supabase: SupabaseClient<Database>,
   id: string
@@ -124,11 +117,6 @@ export async function deleteActivityById(
   return true;
 }
 
-/**
- * Sets (creates or updates) the current user's response to an activity.
- * Relies on the "activity_responses_insert_own" / "..._update_own_or_admin"
- * RLS policies and the (activity_id, profile_id) uniqueness constraint.
- */
 export async function setActivityResponse(
   supabase: SupabaseClient<Database>,
   activityId: string,
@@ -142,6 +130,26 @@ export async function setActivityResponse(
 
   if (error) {
     console.error("setActivityResponse failed", error);
+    return false;
+  }
+
+  return true;
+}
+
+/** Retract a yes/no vote — removes the row so the user can choose again. */
+export async function clearActivityResponse(
+  supabase: SupabaseClient<Database>,
+  activityId: string,
+  profileId: string
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("activity_responses")
+    .delete()
+    .eq("activity_id", activityId)
+    .eq("profile_id", profileId);
+
+  if (error) {
+    console.error("clearActivityResponse failed", error);
     return false;
   }
 

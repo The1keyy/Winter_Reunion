@@ -108,7 +108,9 @@ export function buildHomeUpdates({
     });
   }
 
-  const votingCabins = cabins.filter((cabin) => cabin.status === "voting");
+  const votingCabins = cabins.filter(
+    (cabin) => cabin.status === "voting" || cabin.status === "proposed"
+  );
   if (votingCabins.length > 0) {
     group.push({
       id: "cabins-voting",

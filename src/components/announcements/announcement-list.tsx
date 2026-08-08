@@ -26,33 +26,28 @@ function linkLabel(url: string) {
 export function AnnouncementList({ announcements }: AnnouncementListProps) {
   if (announcements.length === 0) {
     return (
-      <p className="text-sm font-normal text-off-white/60">
-        No updates yet. Check back soon.
-      </p>
+      <p className="wr-hint">No updates yet. Check back soon.</p>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {announcements.map((announcement) => (
-        <div
-          key={announcement.id}
-          className="flex flex-col gap-1 border-b border-warm-gray/20 pb-4 last:border-b-0 last:pb-0"
-        >
+        <article key={announcement.id} className="wr-panel flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-normal text-off-white">
+            <h3 className="font-heading text-sm font-semibold text-off-white">
               {announcement.title}
             </h3>
             {announcement.pinned ? (
-              <span className="border border-winter-green px-1.5 py-0.5 text-xs text-winter-green">
+              <span className="border border-winter-green/70 bg-winter-green/10 px-1.5 py-0.5 text-[11px] font-semibold text-winter-green">
                 Pinned
               </span>
             ) : null}
-            <span className="text-xs text-off-white/40">
+            <span className="text-xs text-warm-gray">
               {formatDate(announcement.created_at)}
             </span>
           </div>
-          <p className="text-sm font-normal whitespace-pre-wrap text-off-white/70">
+          <p className="text-sm whitespace-pre-wrap text-off-white/70">
             {announcement.body}
           </p>
           {announcement.link_url ? (
@@ -60,12 +55,12 @@ export function AnnouncementList({ announcements }: AnnouncementListProps) {
               href={announcement.link_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-1 w-fit text-sm font-normal text-off-white underline underline-offset-4 hover:text-off-white/80"
+              className="mt-1 w-fit text-sm font-medium text-ice underline-offset-4 hover:text-off-white hover:underline"
             >
               {linkLabel(announcement.link_url)}
             </a>
           ) : null}
-        </div>
+        </article>
       ))}
     </div>
   );

@@ -1,13 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 
+const desktopLinks = [
+  { href: "/home", label: "Home" },
+  { href: "/talk", label: "Talk" },
+  { href: "/rsvp", label: "RSVP" },
+  { href: "/cabins", label: "Cabins" },
+  { href: "/activities", label: "Activities" },
+  { href: "/polls", label: "Polls" },
+  { href: "/payments", label: "Pay" },
+  { href: "/suggestions", label: "Ideas" },
+] as const;
+
 export function NavBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { profile, loading, isAdmin, isCoAdmin } = useUser();
   const isStaff = isAdmin || isCoAdmin;
 
@@ -19,51 +31,62 @@ export function NavBar() {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-warm-gray/30 bg-charcoal px-4 py-3 md:px-8">
-      <div className="flex items-center gap-4 md:gap-6">
-        <Link
-          href="/home"
-          className="text-sm font-light text-off-white md:text-base"
-        >
-          Winter Reunion 2027
-        </Link>
-        <nav className="hidden items-center gap-3 sm:flex">
-          <Link
-            href="/home"
-            className="text-xs font-normal text-off-white/60 hover:text-off-white"
-          >
-            Home
+    <header className="sticky top-0 z-30 border-b border-warm-gray/25 bg-charcoal/90 px-4 py-3 backdrop-blur-md md:px-8">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4 md:gap-8">
+          <Link href="/home" className="group flex min-w-0 flex-col">
+            <span className="font-heading text-[11px] font-semibold tracking-[0.18em] text-ice uppercase">
+              Crew trip
+            </span>
+            <span className="truncate font-heading text-base font-semibold text-off-white transition-colors group-hover:text-ember md:text-lg">
+              Winter Reunion 2027
+            </span>
           </Link>
-          <Link
-            href="/talk"
-            className="text-xs font-normal text-off-white/60 hover:text-off-white"
-          >
-            Talk
-          </Link>
-          {isStaff ? (
-            <Link
-              href="/admin"
-              className="text-xs font-normal text-off-white/60 hover:text-off-white"
-            >
-              Dashboard
-            </Link>
-          ) : null}
-        </nav>
-      </div>
+          <nav className="hidden items-center gap-1 lg:flex">
+            {desktopLinks.map((link) => {
+              const active =
+                pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={
+                    "px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition-colors " +
+                    (active
+                      ? "text-ember"
+                      : "text-warm-gray hover:text-off-white")
+                  }
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            {isStaff ? (
+              <Link
+                href="/admin"
+                className={
+                  "px-2.5 py-1.5 text-xs font-semibold tracking-wide uppercase transition-colors " +
+                  (pathname.startsWith("/admin")
+                    ? "text-ember"
+                    : "text-warm-gray hover:text-off-white")
+                }
+              >
+                Admin
+              </Link>
+            ) : null}
+          </nav>
+        </div>
 
-      <div className="flex items-center gap-3 md:gap-4">
-        {!loading && profile ? (
-          <span className="text-sm font-normal text-off-white/80">
-            {profile.name}
-          </span>
-        ) : null}
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="border border-warm-gray/40 px-3 py-1.5 text-sm font-normal text-off-white transition-colors hover:border-off-white"
-        >
-          Sign out
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          {!loading && profile ? (
+            <span className="hidden text-sm font-medium text-off-white/80 sm:inline">
+              {profile.name}
+            </span>
+          ) : null}
+          <button type="button" onClick={handleSignOut} className="wr-btn !min-h-9 !px-3 !py-1.5 text-xs">
+            Sign out
+          </button>
+        </div>
       </div>
     </header>
   );

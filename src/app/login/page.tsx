@@ -9,13 +9,14 @@ export default async function LoginPage({
   const params = await searchParams;
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center bg-charcoal px-6 py-12">
-      <div className="flex w-full max-w-sm flex-col gap-8">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-light text-off-white md:text-3xl">
+    <main className="relative flex min-h-svh flex-col items-center justify-center px-6 py-12">
+      <div className="wr-fade-up flex w-full max-w-md flex-col gap-8">
+        <div className="flex flex-col gap-2">
+          <span className="wr-section-label">Crew access</span>
+          <h1 className="font-heading text-3xl font-semibold text-off-white md:text-4xl">
             Winter Reunion 2027
           </h1>
-          <p className="text-sm font-normal text-off-white/70">
+          <p className="text-sm leading-relaxed text-off-white/70 md:text-[15px]">
             Sign in with the email and password you chose (or screenshotted)
             when you joined.
           </p>
@@ -27,7 +28,9 @@ export default async function LoginPage({
           </FormNotice>
         ) : null}
 
-        <LoginForm />
+        <div className="wr-panel">
+          <LoginForm />
+        </div>
       </div>
     </main>
   );

@@ -337,6 +337,9 @@ export interface Database {
           bathrooms: number | null;
           max_occupancy: number | null;
           notes: string | null;
+          link_title: string | null;
+          link_description: string | null;
+          link_image: string | null;
           status: CabinStatus;
           created_at: string;
           updated_at: string;
@@ -353,6 +356,9 @@ export interface Database {
           bathrooms?: number | null;
           max_occupancy?: number | null;
           notes?: string | null;
+          link_title?: string | null;
+          link_description?: string | null;
+          link_image?: string | null;
           status?: CabinStatus;
           created_at?: string;
           updated_at?: string;
@@ -369,6 +375,9 @@ export interface Database {
           bathrooms?: number | null;
           max_occupancy?: number | null;
           notes?: string | null;
+          link_title?: string | null;
+          link_description?: string | null;
+          link_image?: string | null;
           status?: CabinStatus;
           created_at?: string;
           updated_at?: string;
@@ -380,6 +389,7 @@ export interface Database {
           id: string;
           cabin_id: string;
           profile_id: string;
+          response: "yes" | "no";
           rank: number | null;
           created_at: string;
         };
@@ -387,6 +397,7 @@ export interface Database {
           id?: string;
           cabin_id: string;
           profile_id: string;
+          response?: "yes" | "no";
           rank?: number | null;
           created_at?: string;
         };
@@ -394,6 +405,7 @@ export interface Database {
           id?: string;
           cabin_id?: string;
           profile_id?: string;
+          response?: "yes" | "no";
           rank?: number | null;
           created_at?: string;
         };
@@ -411,6 +423,10 @@ export interface Database {
           end_time: string | null;
           location: string | null;
           cost_per_person: number | null;
+          link_url: string | null;
+          link_title: string | null;
+          link_description: string | null;
+          link_image: string | null;
           status: ActivityStatus;
           created_at: string;
           updated_at: string;
@@ -426,6 +442,10 @@ export interface Database {
           end_time?: string | null;
           location?: string | null;
           cost_per_person?: number | null;
+          link_url?: string | null;
+          link_title?: string | null;
+          link_description?: string | null;
+          link_image?: string | null;
           status?: ActivityStatus;
           created_at?: string;
           updated_at?: string;
@@ -441,6 +461,10 @@ export interface Database {
           end_time?: string | null;
           location?: string | null;
           cost_per_person?: number | null;
+          link_url?: string | null;
+          link_title?: string | null;
+          link_description?: string | null;
+          link_image?: string | null;
           status?: ActivityStatus;
           created_at?: string;
           updated_at?: string;

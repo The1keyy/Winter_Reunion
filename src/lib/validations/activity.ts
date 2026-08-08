@@ -29,6 +29,36 @@ const optionalAmount = z
   })
   .transform((value) => (value === null ? null : Number(value)));
 
+const optionalUrl = z
+  .string()
+  .transform(emptyToNull)
+  .refine(
+    (value) => {
+      if (value === null) return true;
+      try {
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { error: "Use a full link like https://..." }
+  );
+
+/** Anything goes — just need a name and/or a link. */
+export const activityCardSchema = z
+  .object({
+    name: z.string().transform((value) => value.trim()),
+    linkUrl: optionalUrl,
+    costPerPerson: optionalAmount,
+    description: optionalText,
+    category: optionalText,
+  })
+  .refine((data) => data.name.length > 0 || data.linkUrl != null, {
+    error: "Add a name, a link, or both — whatever you’ve got.",
+    path: ["name"],
+  });
+
 export const activitySchema = z.object({
   name: z.string().trim().min(1, { error: "Enter an activity name." }),
   description: optionalText,
@@ -38,6 +68,8 @@ export const activitySchema = z.object({
   endTime: optionalTime,
   location: optionalText,
   costPerPerson: optionalAmount,
+  linkUrl: optionalUrl,
 });
 
+export type ActivityCardInput = z.infer<typeof activityCardSchema>;
 export type ActivityFormInput = z.infer<typeof activitySchema>;
