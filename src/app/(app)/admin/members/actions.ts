@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getProfile } from "@/lib/supabase/profiles";
+import { ensureProfile, getProfile, updateProfilePhone } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
 import {
+  createMemberSchema,
   memberRoleSchema,
   resetPasswordSchema,
 } from "@/lib/validations/member";
@@ -20,6 +21,12 @@ export interface ResetPasswordState {
 export interface MemberRoleState {
   error?: string;
   success?: boolean;
+}
+
+export interface CreateMemberState {
+  error?: string;
+  success?: boolean;
+  postedAt?: number;
 }
 
 async function requirePrimaryAdmin() {
@@ -70,6 +77,62 @@ export async function resetMemberPassword(
   }
 
   revalidatePath("/admin/members");
+  return { success: true, postedAt: Date.now() };
+}
+
+export async function createMemberAccount(
+  _prevState: CreateMemberState,
+  formData: FormData
+): Promise<CreateMemberState> {
+  const { ok, supabase } = await requirePrimaryAdmin();
+
+  if (!ok) {
+    return { error: "Only the trip admin can add members." };
+  }
+
+  const parsed = createMemberSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    password: formData.get("password"),
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Check the form and try again.",
+    };
+  }
+
+  const { name, email, phone, password } = parsed.data;
+
+  const adminClient = createAdminClient();
+
+  const { data, error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: name },
+  });
+
+  if (error || !data.user) {
+    if (error?.message.toLowerCase().includes("already been registered")) {
+      return { error: "That email already has an account." };
+    }
+    return {
+      error: error?.message ?? "Could not create the account. Please try again.",
+    };
+  }
+
+  // Belt-and-suspenders: the auth.users trigger (handle_new_user) also
+  // creates this row, but ensureProfile is a safe no-op if it already ran.
+  await ensureProfile(supabase, data.user);
+  if (phone) {
+    await updateProfilePhone(supabase, data.user.id, phone);
+  }
+
+  revalidatePath("/admin/members");
+  revalidatePath("/admin");
+  revalidatePath("/home");
   return { success: true, postedAt: Date.now() };
 }
 

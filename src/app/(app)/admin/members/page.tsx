@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { deleteMember } from "@/app/(app)/admin/members/actions";
+import { CreateMemberForm } from "@/components/admin/create-member-form";
 import { MemberRoleForm } from "@/components/admin/member-role-form";
 import { ResetPasswordForm } from "@/components/admin/reset-password-form";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
@@ -53,6 +54,8 @@ export default async function MembersPage() {
           your admin password.
         </p>
       </div>
+
+      <CreateMemberForm />
 
       <div className="flex flex-col gap-6">
         {members.length === 0 ? (

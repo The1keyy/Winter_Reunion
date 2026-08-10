@@ -163,3 +163,22 @@ create policy "talk_post_likes_insert_own" on public.talk_post_likes
 drop policy if exists "talk_post_likes_delete_own" on public.talk_post_likes;
 create policy "talk_post_likes_delete_own" on public.talk_post_likes
   for delete to authenticated using (profile_id = auth.uid());
+
+-- 6) Let the service-role bootstrap script (scripts/ensure-admin.mjs) set the
+-- first admin. Previously blocked because auth.uid() is null for service-role
+-- calls, so is_admin() was always false and the trigger always raised.
+create or replace function public.prevent_unauthorized_role_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.role is distinct from old.role
+     and auth.uid() is not null
+     and not public.is_admin() then
+    raise exception 'Only admins or co-admins can change roles.';
+  end if;
+  return new;
+end;
+$$;
