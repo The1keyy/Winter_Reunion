@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AnnouncementList } from "@/components/announcements/announcement-list";
 import { NextMove, type NextMoveStep } from "@/components/guidance/next-move";
 import { PhonePrompt } from "@/components/profile/phone-prompt";
+import { AttendanceBoard } from "@/components/rsvp/attendance-board";
 import { TripOverview } from "@/components/trip/trip-overview";
 import { Avatar } from "@/components/ui/avatar";
 import { HomeUpdates } from "@/components/updates/home-updates";
@@ -11,7 +12,7 @@ import { getAnnouncements } from "@/lib/supabase/announcements";
 import { getCabins } from "@/lib/supabase/cabins";
 import { getPolls } from "@/lib/supabase/polls";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
-import { getRegistration } from "@/lib/supabase/registrations";
+import { getAllRegistrations, getRegistration } from "@/lib/supabase/registrations";
 import { createClient } from "@/lib/supabase/server";
 import { getTalkPosts } from "@/lib/supabase/talk";
 import { getTripSettings } from "@/lib/supabase/trip-settings";
@@ -27,6 +28,7 @@ export default async function HomePage() {
     profile,
     trip,
     registration,
+    allRegistrations,
     announcements,
     polls,
     cabins,
@@ -37,6 +39,7 @@ export default async function HomePage() {
     user ? getProfile(supabase, user.id) : Promise.resolve(null),
     getTripSettings(supabase),
     user ? getRegistration(supabase, user.id) : Promise.resolve(null),
+    getAllRegistrations(supabase),
     getAnnouncements(supabase, 5),
     getPolls(supabase),
     getCabins(supabase),
@@ -148,6 +151,12 @@ export default async function HomePage() {
           <TripOverview trip={trip} />
         </div>
       ) : null}
+
+      <AttendanceBoard
+        profiles={profiles}
+        registrations={allRegistrations}
+        currentUserId={user?.id ?? null}
+      />
 
       <section className="flex flex-col gap-3">
         <span className="wr-section-label">Explore</span>

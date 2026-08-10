@@ -182,3 +182,8 @@ begin
   return new;
 end;
 $$;
+
+-- 7) Let everyone see who's RSVP'd, for the "who's coming" board on Home.
+drop policy if exists "registrations_select_own_or_admin" on public.registrations;
+create policy "registrations_select_all" on public.registrations
+  for select to authenticated using (true);
