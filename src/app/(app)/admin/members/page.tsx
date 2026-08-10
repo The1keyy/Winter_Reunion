@@ -4,6 +4,7 @@ import { deleteMember } from "@/app/(app)/admin/members/actions";
 import { CreateMemberForm } from "@/components/admin/create-member-form";
 import { MemberRoleForm } from "@/components/admin/member-role-form";
 import { ResetPasswordForm } from "@/components/admin/reset-password-form";
+import { ConfirmSubmitButton } from "@/components/ui/confirm-submit-button";
 import { getAllProfiles, getProfile } from "@/lib/supabase/profiles";
 import { createClient } from "@/lib/supabase/server";
 
@@ -104,12 +105,12 @@ export default async function MembersPage() {
 
                 {!isSelf ? (
                   <form action={deleteMember.bind(null, member.id)}>
-                    <button
-                      type="submit"
-                      className="text-sm font-normal text-off-white/50 underline underline-offset-4 hover:text-off-white"
+                    <ConfirmSubmitButton
+                      confirmMessage={`Delete ${member.name}? This permanently removes their account and login. This can't be undone.`}
+                      className="text-sm font-normal text-off-white/50 underline underline-offset-4 hover:text-destructive"
                     >
                       Delete user
-                    </button>
+                    </ConfirmSubmitButton>
                   </form>
                 ) : null}
               </div>
