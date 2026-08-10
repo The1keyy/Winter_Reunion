@@ -1,7 +1,7 @@
 "use server";
 
 import { sendLoginDetails } from "@/lib/notifications/send-login-details";
-import { ensureProfile, updateProfilePhone } from "@/lib/supabase/profiles";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { formatJoinDisplayName, joinSchema } from "@/lib/validations/join";
 
@@ -52,24 +52,50 @@ export async function join(
 
   const displayName = formatJoinDisplayName(firstName, lastInitial);
   const loginUrl = `${siteUrl()}/login`;
-  const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({
+  // Create the account already confirmed via the admin API instead of the
+  // public signUp() flow. signUp() only creates a session (and only lets
+  // the profile insert pass RLS) once the email is confirmed - anyone who
+  // didn't click that link ended up with a login but no profile row and no
+  // way to show up anywhere in the app. Creating (and confirming) the user
+  // directly skips that trap entirely.
+  const adminClient = createAdminClient();
+
+  const { data, error } = await adminClient.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { full_name: displayName },
-      // So Supabase "Confirm your email" lands on our app, not a dead page.
-      emailRedirectTo: `${siteUrl()}/auth/callback?next=/home`,
-    },
+    email_confirm: true,
+    user_metadata: { full_name: displayName },
   });
 
   if (error || !data.user) {
+    if (error?.message.toLowerCase().includes("already been registered")) {
+      return {
+        error: "That email already has an account. Try signing in instead.",
+      };
+    }
     return { error: "Could not create your account. Please try again." };
   }
 
-  await ensureProfile(supabase, data.user);
-  await updateProfilePhone(supabase, data.user.id, phone);
+  // The auth.users trigger (handle_new_user) also creates this row, but an
+  // explicit upsert here - with the service role, so it can't be blocked by
+  // RLS - guarantees it even if that trigger is ever missing or fails. This
+  // is exactly the gap that left earlier joiners stuck with a login and no
+  // profile.
+  await adminClient
+    .from("profiles")
+    .upsert(
+      { id: data.user.id, name: displayName, email, phone, role: "member" },
+      { onConflict: "id" }
+    );
+
+  // Sign them in right away so they land in the app instead of bouncing to
+  // a separate /login step.
+  const supabase = await createClient();
+  const { data: signInData } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   const delivery = await sendLoginDetails({
     displayName,
@@ -89,12 +115,11 @@ export async function join(
     smsSent: delivery.smsSent,
   };
 
-  if (!data.session) {
+  if (!signInData.session) {
     return {
       ...base,
       needsEmailConfirm: true,
-      message:
-        "If you get a Confirm email from Supabase, tap it — it should open this site. Then sign in with the email + password below (screenshot them).",
+      message: "Your account is ready - sign in with the email + password below (screenshot them).",
     };
   }
 
