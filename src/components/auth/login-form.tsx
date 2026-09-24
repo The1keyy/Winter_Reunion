@@ -18,6 +18,7 @@ export function LoginForm() {
   const [state, formAction, isPending] = useActionState(signIn, initialState);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   function validate(nextEmail: string, nextPassword: string) {
@@ -90,11 +91,29 @@ export function LoginForm() {
         error={fieldErrors.password}
       />
 
+      <label className="flex w-fit items-center gap-2 text-sm font-medium text-off-white">
+        <input
+          type="checkbox"
+          name="remember"
+          value="on"
+          checked={remember}
+          onChange={(event) => setRemember(event.target.checked)}
+          className="accent-ember"
+        />
+        Remember me on this device
+      </label>
+
       {state.error ? <FormNotice tone="error">{state.error}</FormNotice> : null}
 
       <button type="submit" disabled={isPending} className="wr-btn-primary w-full">
         {isPending ? "Signing in..." : "Sign in"}
       </button>
+
+      <p className="wr-hint">
+        {remember
+          ? "Stays signed in on this device — no need to log in again next time."
+          : "You'll need to sign in again next time you open this on this device."}
+      </p>
 
       <p className="wr-hint">Forgot your password? Ask Key to reset it for you.</p>
     </form>

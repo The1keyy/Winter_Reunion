@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { REMEMBER_COOKIE } from "@/lib/supabase/remember";
 import type { Database } from "@/types/database";
 
 const PUBLIC_PATHS = ["/login", "/join", "/auth"];
@@ -18,6 +19,11 @@ function isPublicPath(pathname: string) {
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Absent means "remember" (matches the default before this cookie
+  // existed, and the checkbox's own default) - only an explicit "0" from
+  // someone unchecking "Remember me" turns off the long-lived cookie.
+  const remember = request.cookies.get(REMEMBER_COOKIE)?.value !== "0";
+
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -31,9 +37,12 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const finalOptions = remember
+              ? options
+              : { ...options, maxAge: undefined, expires: undefined };
+            supabaseResponse.cookies.set(name, value, finalOptions);
+          });
         },
       },
     }

@@ -3,6 +3,16 @@ import { cookies } from "next/headers";
 
 import type { Database } from "@/types/database";
 
+interface CreateClientOptions {
+  /**
+   * Defaults to true (matches @supabase/ssr's own default: a ~400 day
+   * cookie, so people stay signed in). Pass false only from the sign-in
+   * action when the person unchecked "Remember me" - that strips the
+   * expiry so the session cookie is deleted when the browser fully closes.
+   */
+  persistSession?: boolean;
+}
+
 /**
  * Server-side Supabase client for use in Server Components, Server Actions,
  * and Route Handlers. Reads the current request's cookies for the session.
@@ -11,7 +21,8 @@ import type { Database } from "@/types/database";
  * from a Server Component are caught and ignored because the proxy
  * (src/proxy.ts) already refreshes and persists the session on every request.
  */
-export async function createClient() {
+export async function createClient(options: CreateClientOptions = {}) {
+  const { persistSession = true } = options;
   const cookieStore = await cookies();
 
   return createServerClient<Database>(
@@ -24,9 +35,12 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
+            cookiesToSet.forEach(({ name, value, options: cookieOptions }) => {
+              const finalOptions = persistSession
+                ? cookieOptions
+                : { ...cookieOptions, maxAge: undefined, expires: undefined };
+              cookieStore.set(name, value, finalOptions);
+            });
           } catch {
             // Called from a Server Component - safe to ignore.
           }
